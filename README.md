@@ -1,12 +1,6 @@
 # openJDK8
 JDK源码学习
 
- - [Ubuntu22环境下编译OpenJDK12源码](https://blog.csdn.net/qq_25825005/article/details/127162939)
- - [JDK源码下载Github](https://github.com/taotao1024/openJDK8.git)
- - [环境构建](https://www.bilibili.com/video/BV1V7411U78L/)
- - ![IDEA设置](doc/images/JDK-编译/JDK源码路径设置.png)
- - ![IDEA设置](doc/images/JDK-编译/JDK调试设置.png)
-
 ## [目录结构](oracle-jdk8/src/source)
  - [sun](oracle-jdk8/src/source/com/sun) - 不关注
  - [java](oracle-jdk8/src/source/java) - 重点关注
@@ -20,3 +14,11 @@ JDK源码学习
  - [javax](oracle-jdk8/src/source/javax) - 不关注
  - [launcher](oracle-jdk8/src/source/launcher) - 不关注
  - [org](oracle-jdk8/src/source/org) - 不关注
+
+
+
+- [Ubuntu22环境下编译OpenJDK12源码](https://blog.csdn.net/qq_25825005/article/details/127162939)
+- [JDK源码下载Github](https://github.com/taotao1024/openJDK8.git)
+- [环境构建](https://www.bilibili.com/video/BV1V7411U78L/)
+- ![IDEA设置](doc/images/JDK-编译/JDK源码路径设置.png)
+- ![IDEA设置](doc/images/JDK-编译/JDK调试设置.png)

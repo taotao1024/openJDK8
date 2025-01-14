@@ -168,6 +168,8 @@ public final class LocalDateTime
     /**
      * Obtains the current date-time from the system clock in the default time-zone.
      * <p>
+     * 从默认时区的系统时钟获取当前日期时间
+     * <p>
      * This will query the {@link Clock#systemDefaultZone() system clock} in the default
      * time-zone to obtain the current date-time.
      * <p>
@@ -182,6 +184,8 @@ public final class LocalDateTime
 
     /**
      * Obtains the current date-time from the system clock in the specified time-zone.
+     * <p>
+     * 从指定时区的系统时钟获取当前日期时间
      * <p>
      * This will query the {@link Clock#system(ZoneId) system clock} to obtain the current date-time.
      * Specifying the time-zone avoids dependence on the default time-zone.
@@ -294,15 +298,21 @@ public final class LocalDateTime
      * day, hour and minute, setting the second and nanosecond to zero.
      * <p>
      * This returns a {@code LocalDateTime} with the specified year, month,
-     * day-of-month, hour and minute.
+     * day-of-month, hour and minute.<p>
+     * 该日期必须对年和月有效，否则将引发异常。second 和 nanosecond 字段将设置为零
      * The day must be valid for the year and month, otherwise an exception will be thrown.
      * The second and nanosecond fields will be set to zero.
      *
-     * @param year  the year to represent, from MIN_YEAR to MAX_YEAR
-     * @param month  the month-of-year to represent, from 1 (January) to 12 (December)
-     * @param dayOfMonth  the day-of-month to represent, from 1 to 31
-     * @param hour  the hour-of-day to represent, from 0 to 23
-     * @param minute  the minute-of-hour to represent, from 0 to 59
+     * @param year  the year to represent, from MIN_YEAR to MAX_YEAR <p>
+     *              代表的年份，从 MIN_YEAR 年到 MAX_YEAR 年
+     * @param month  the month-of-year to represent, from 1 (January) to 12 (December) <p>
+     *               要代表的一年中的月份，从 1 月 1 日（1 月）到 12 日（12 月）
+     * @param dayOfMonth  the day-of-month to represent, from 1 to 31 <p>
+     *                    要表示的月份中的日期，从 1 到 31
+     * @param hour  the hour-of-day to represent, from 0 to 23 <p>
+     *              要表示的一天中的小时，从 0 到 23
+     * @param minute  the minute-of-hour to represent, from 0 to 59 <p>
+     *                要表示的小时分钟，从 0 到 59
      * @return the local date-time, not null
      * @throws DateTimeException if the value of any field is out of range,
      *  or if the day-of-month is invalid for the month-year

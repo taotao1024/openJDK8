@@ -477,6 +477,8 @@ import java.util.Set;
  *
  * @implSpec
  * This class is immutable and thread-safe.
+ * <p>
+ * 此类是不可变的，并且是线程安全的。
  *
  * @since 1.8
  */

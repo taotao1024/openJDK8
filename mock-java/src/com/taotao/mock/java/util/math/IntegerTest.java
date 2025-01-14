@@ -8,6 +8,8 @@ public class IntegerTest {
         System.out.println(100 == new Integer(100));
         // true 同上 valueOf 也是 new对象
         System.out.println(100 == Integer.valueOf(100));
+        // treu 同上
+        System.out.println(128 == Integer.valueOf(128));
 
         System.out.println("------------------------------------------");
 

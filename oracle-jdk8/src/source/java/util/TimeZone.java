@@ -589,7 +589,10 @@ abstract public class TimeZone implements Serializable, Cloneable {
     }
 
     /**
-     * Gets the platform defined TimeZone ID.
+     * Gets the platform defined TimeZone ID. <p>
+     * platform 平台<p>
+     * defined 定义<p>
+     * TimeZone 时区
      **/
     private static native String getSystemTimeZoneID(String javaHome);
 

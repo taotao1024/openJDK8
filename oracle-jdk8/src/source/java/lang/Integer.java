@@ -828,6 +828,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      */
     public static Integer valueOf(int i) {
         if (i >= IntegerCache.low && i <= IntegerCache.high)
+            // 从缓存中获取
             return IntegerCache.cache[i + (-IntegerCache.low)];
         return new Integer(i);
     }
