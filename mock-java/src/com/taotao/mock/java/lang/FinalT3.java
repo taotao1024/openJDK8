@@ -12,7 +12,7 @@ public class FinalT3 {
      * 添加 ConstantValue 指令
      */
     public final int a = 1;
-    public final String b = "2";
+    public final String b = "10";
     public final Object c = new Object();
     public final int d;
     public final String e = UUID.randomUUID().toString();
