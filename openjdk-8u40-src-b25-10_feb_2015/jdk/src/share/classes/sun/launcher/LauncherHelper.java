@@ -452,18 +452,29 @@ public enum LauncherHelper {
 
     /**
      * This method does the following:
+     * 此方法执行以下操作：
      * 1. gets the classname from a Jar's manifest, if necessary
+     * 1. 如有必要，从 Jar 的清单中获取类名
      * 2. loads the class using the System ClassLoader
+     * 2.使用 System ClassLoader
      * 3. ensures the availability and accessibility of the main method,
      *    using signatureDiagnostic method.
+     * 3 加载类。使用 signatureDiagnostic 方法确保 main 方法的可用性和可访问性。
      *    a. does the class exist
+     *    a. 类是否存在
      *    b. is there a main
+     *    b. 是否存在 main
      *    c. is the main public
+     *    c. 是主要的公共
      *    d. is the main static
+     *    d. 是主要的静态
      *    e. does the main take a String array for args
+     *    e. main 是否接受 args 的 String 数组
      * 4. if no main method and if the class extends FX Application, then call
      *    on FXHelper to determine the main class to launch
+     * 4.如果没有 main 方法，并且该类扩展了 FX Application，则调用 FXHelper 以确定要启动
      * 5. and off we go......
+     * 5 的主类。然后我们出发了......
      *
      * @param printToStderr if set, all output will be routed to stderr
      * @param mode LaunchMode as determined by the arguments passed on the

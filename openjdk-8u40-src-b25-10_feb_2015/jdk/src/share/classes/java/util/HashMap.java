@@ -253,6 +253,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * than 2 and should be at least 8 to mesh with assumptions in
      * tree removal about conversion back to plain bins upon
      * shrinkage.
+     *
+     * TREEIFY:树化 <p>
+     * THRESHOLD:门槛 <p>
+     * 使用 tree 而不是 list 的 bin 计数阈值。将元素添加到至少具有此数量节点的 bin 时，bin 将转换为树。该值必须大于 2 且至少应为 8，以便与树删除中有关在收缩时转换回普通分箱的假设相吻合。
+     *
      */
     static final int TREEIFY_THRESHOLD = 8;
 
@@ -274,6 +279,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Basic hash bin node, used for most entries.  (See below for
      * TreeNode subclass, and in LinkedHashMap for its Entry subclass.)
+     *
+     * JDK-1.8 将 HashEntry 修改为 Node
      */
     static class Node<K,V> implements Map.Entry<K,V> {
         final int hash;
@@ -391,6 +398,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * necessary. When allocated, length is always a power of two.
      * (We also tolerate length zero in some operations to allow
      * bootstrapping mechanics that are currently not needed.)
+     * <p>
+     * JDK-1.8 将 HashEntry 修改为 Node
      */
     transient Node<K,V>[] table;
 
@@ -563,19 +572,27 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @param key the key
      * @return the node, or null if none
      */
-    final Node<K,V> getNode(int hash, Object key) {
-        Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+    final Node<K, V> getNode(int hash, Object key) {
+        Node<K, V>[] tab;
+        Node<K, V> first, e;
+        int n;
+        K k;
+        // 首先将 key hash 之后取得所定位的桶
         if ((tab = table) != null && (n = tab.length) > 0 &&
-            (first = tab[(n - 1) & hash]) != null) {
+                (first = tab[(n - 1) & hash]) != null) {
             if (first.hash == hash && // always check first node
-                ((k = first.key) == key || (key != null && key.equals(k))))
+                    ((k = first.key) == key || (key != null && key.equals(k))))
+                // 否则判断桶的第一个位置(有可能是链表、红黑树)的 key 是否为查询的 key，是就直接返回 value
                 return first;
             if ((e = first.next) != null) {
+                // 如果第一个不匹配，则判断它的下一个是红黑树还是链表。
                 if (first instanceof TreeNode)
-                    return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+                    // 红黑树就按照树的查找方式返回值
+                    return ((TreeNode<K, V>) first).getTreeNode(hash, key);
+                // 不然就按照链表的方式遍历匹配返回值
                 do {
                     if (e.hash == hash &&
-                        ((k = e.key) == key || (key != null && key.equals(k))))
+                            ((k = e.key) == key || (key != null && key.equals(k))))
                         return e;
                 } while ((e = e.next) != null);
             }
@@ -623,32 +640,44 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
                    boolean evict) {
-        Node<K,V>[] tab; Node<K,V> p; int n, i;
+        Node<K, V>[] tab;
+        Node<K, V> p;
+        int n, i;
+        // 判断当前桶是否为空，空的就需要初始化（resize 中会判断是否进行初始化）
         if ((tab = table) == null || (n = tab.length) == 0)
             n = (tab = resize()).length;
+        // 根据当前 key 的 hashcode 定位到具体的桶中并判断是否为空，为空表明没有 Hash 冲突就直接在当前位置创建一个新桶即可
         if ((p = tab[i = (n - 1) & hash]) == null)
             tab[i] = newNode(hash, key, value, null);
         else {
-            Node<K,V> e; K k;
+            Node<K, V> e;
+            K k;
             if (p.hash == hash &&
-                ((k = p.key) == key || (key != null && key.equals(k))))
+                    // 如果当前桶有值（ Hash 冲突），那么就要比较当前桶中的 key、key 的 hashcode 与写入的 key 是否相等，
+                    // 相等就赋值给 e,在后面统一进行赋值及返回
+                    ((k = p.key) == key || (key != null && key.equals(k))))
                 e = p;
             else if (p instanceof TreeNode)
-                e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+                // 如果当前桶为红黑树，那就要按照红黑树的方式写入数据
+                e = ((TreeNode<K, V>) p).putTreeVal(this, tab, hash, key, value);
             else {
+                // 如果是个链表，就需要将当前的 key、value 封装成一个新节点写入到当前桶的后面（形成链表）
                 for (int binCount = 0; ; ++binCount) {
                     if ((e = p.next) == null) {
                         p.next = newNode(hash, key, value, null);
+                        // 接着判断当前链表的大小是否大于预设的阈值，大于时就要转换为红黑树
                         if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
                             treeifyBin(tab, hash);
                         break;
                     }
+                    // 如果在遍历过程中找到 key 相同时直接退出遍历
                     if (e.hash == hash &&
-                        ((k = e.key) == key || (key != null && key.equals(k))))
+                            ((k = e.key) == key || (key != null && key.equals(k))))
                         break;
                     p = e;
                 }
             }
+            // 如果 e != null 就相当于存在相同的 key,那就需要将值覆盖
             if (e != null) { // existing mapping for key
                 V oldValue = e.value;
                 if (!onlyIfAbsent || oldValue == null)
@@ -658,7 +687,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
         ++modCount;
+        // 最后判断是否需要进行扩容
         if (++size > threshold)
+            // 这里扩容操作 resize() 非线程安全
             resize();
         afterNodeInsertion(evict);
         return null;

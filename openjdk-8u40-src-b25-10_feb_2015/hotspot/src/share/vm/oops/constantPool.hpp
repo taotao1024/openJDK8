@@ -87,7 +87,7 @@ class ConstantPool : public Metadata {
   friend class Universe;             // For null constructor
  private:
   Array<u1>*           _tags;        // the tag array describing the constant pool's contents
-  ConstantPoolCache*   _cache;       // 缓存保存解释器运行时信息
+  ConstantPoolCache*   _cache;       // 缓存保存解释器运行时信息 hashtable
   InstanceKlass*       _pool_holder; // the corresponding class
   Array<u2>*           _operands;    // for variable-sized (InvokeDynamic) nodes, usually empty
 

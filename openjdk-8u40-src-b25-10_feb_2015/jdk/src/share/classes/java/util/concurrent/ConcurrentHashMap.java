@@ -1009,21 +1009,27 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /** Implementation for put and putIfAbsent */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
         if (key == null || value == null) throw new NullPointerException();
+        // 根据 key 计算出 hashcode
         int hash = spread(key.hashCode());
         int binCount = 0;
+        // 抛弃了原有的 Segment 分段锁，而采用了 CAS + synchronized 来保证并发安全性
         for (Node<K,V>[] tab = table;;) {
             Node<K,V> f; int n, i, fh;
+            // 判断是否需要进行初始化。
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+                // f 即为当前 key 定位出的 Node，如果为空表示当前位置可以写入数据，利用 CAS 尝试写入，失败则自旋保证成功
                 if (casTabAt(tab, i, null,
                              new Node<K,V>(hash, key, value, null)))
                     break;                   // no lock when adding to empty bin
             }
+            // 如果当前位置的 hashcode == MOVED == -1,则需要进行扩容。
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
             else {
                 V oldVal = null;
+                // 如果都不满足，则利用 synchronized 锁写入数据
                 synchronized (f) {
                     if (tabAt(tab, i) == f) {
                         if (fh >= 0) {
@@ -1058,6 +1064,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                         }
                     }
                 }
+                // 如果数量大于 TREEIFY_THRESHOLD 则要转换为红黑树。
                 if (binCount != 0) {
                     if (binCount >= TREEIFY_THRESHOLD)
                         treeifyBin(tab, i);

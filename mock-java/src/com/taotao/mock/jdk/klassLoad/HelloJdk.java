@@ -66,7 +66,11 @@ package com.taotao.mock.jdk.klassLoad;
  * 1、继承的类、实现的接口、属性、方法
  * PS3 如何避免重复解析
  * 1、借助缓存 ConstantPoolCache 运行时常量池缓存
- *
+ *   常量池缓存（hashtable）
+ *     key 常量池索引
+ *     value String -> ConstantPoolCacheEntry
+ *                     klass
+ *                     method
  * <p>
  * 常量池分为三种
  * 1、静态常量池
@@ -93,6 +97,6 @@ public class HelloJdk {
 
         System.out.println("HelloJdk");
 
-        Thread.sleep(60 * 1000 * 1000L);
+        while (true);
     }
 }

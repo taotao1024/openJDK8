@@ -464,6 +464,9 @@ JavaMain(void * _args)
      * that the main method's signature is correct, therefore further checking
      * is not required. The main method is invoked here so that extraneous java
      * stacks are not in the application stack trace.
+     * <p>
+     * LoadMainClass 不仅加载 main 类，还将确保 main 方法的签名正确，因此不需要进一步检查。
+     * 此处调用 main 方法，以便应用程序堆栈跟踪中不包含无关的 java 堆栈。
      */
     mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                        "([Ljava/lang/String;)V");
@@ -1222,8 +1225,7 @@ jclass
 GetLauncherHelperClass(JNIEnv *env)
 {
     if (helperClass == NULL) {
-        NULL_CHECK0(helperClass = FindBootStrapClass(env,
-                "sun/launcher/LauncherHelper"));
+        NULL_CHECK0(helperClass = FindBootStrapClass(env, "sun/launcher/LauncherHelper"));
     }
     return helperClass;
 }
@@ -1287,6 +1289,8 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 /*
  * Loads a class and verifies that the main class is present and it is ok to
  * call it for more details refer to the java implementation.
+ * <p>
+ * 加载一个类并验证主类是否存在，并且可以调用它，有关更多详细信息，请参阅 java 实现。
  */
 static jclass
 LoadMainClass(JNIEnv *env, int mode, char *name)
