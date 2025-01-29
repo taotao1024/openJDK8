@@ -68,6 +68,7 @@ public class Launcher {
         // Create the extension class loader
         ClassLoader extcl;
         try {
+            // 扩展类加载器
             extcl = ExtClassLoader.getExtClassLoader();
         } catch (IOException e) {
             throw new InternalError(
@@ -76,6 +77,7 @@ public class Launcher {
 
         // Now create the class loader to use to launch the application
         try {
+            // 应用类加载器
             loader = AppClassLoader.getAppClassLoader(extcl);
         } catch (IOException e) {
             throw new InternalError(
@@ -83,6 +85,7 @@ public class Launcher {
         }
 
         // Also set the context class loader for the primordial thread.
+        // 此外，为 primordial thread 设置 context class loader。
         Thread.currentThread().setContextClassLoader(loader);
 
         // Finally, install a security manager if requested
@@ -161,6 +164,7 @@ public class Launcher {
          * Creates a new ExtClassLoader for the specified directories.
          */
         public ExtClassLoader(File[] dirs) throws IOException {
+            // 扩展类加载器 父类为null
             super(getExtURLs(dirs), null, factory);
             SharedSecrets.getJavaNetAccess().
                 getURLClassPath(this).initLookupCache(this);
@@ -289,8 +293,11 @@ public class Launcher {
 
         final URLClassPath ucp;
 
-        /*
+        /**
          * Creates a new AppClassLoader
+         *
+         * @param urls   加载路径:java.class.path
+         * @param parent 扩展类加载器
          */
         AppClassLoader(URL[] urls, ClassLoader parent) {
             super(urls, parent, factory);

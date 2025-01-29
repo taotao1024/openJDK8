@@ -252,6 +252,10 @@ public:
   static int parallel_claimed_index()        { return _parallel_claimed_idx; }
 };
 
+/**
+* 字符串常量池
+*   key、value 生成规则
+*/
 class StringTable : public RehashableHashtable<oop, mtSymbol> {
   friend class VMStructs;
 

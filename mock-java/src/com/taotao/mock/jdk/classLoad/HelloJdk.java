@@ -1,4 +1,4 @@
-package com.taotao.mock.jdk.klassLoad;
+package com.taotao.mock.jdk.classLoad;
 
 /**
  * 1、类加载子系统
@@ -15,6 +15,12 @@ package com.taotao.mock.jdk.klassLoad;
  *   ArrayKlass
  *     基本类型数组 boolean、byte、char、short、int、float、long、double
  *     引用类型数组 ObjArrayKlass
+ * <p>
+ * klass模型的存储问题
+ *      根类加载器
+ *      扩展类加载器
+ *      应用类加载器
+ *      方法区、元空间、meta space
  * <p>
  * 对象头: mark word、klass pointer(类型指针)、array length(数组长度)、padding(对其填充)
  * <p>

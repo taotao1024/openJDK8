@@ -387,20 +387,14 @@ public abstract class ClassLoader {
      * {@link #getClassLoadingLock <tt>getClassLoadingLock</tt>} method
      * during the entire class loading process.
      *
-     * @param  name
-     *         The <a href="#name">binary name</a> of the class
-     *
-     * @param  resolve
-     *         If <tt>true</tt> then resolve the class
-     *
-     * @return  The resulting <tt>Class</tt> object
-     *
-     * @throws  ClassNotFoundException
-     *          If the class could not be found
+     * @param name    The <a href="#name">binary name</a> of the class
+     * @param resolve 默认值为false 仅加载、不解析 <p>
+     *                If <tt>true</tt> then resolve the class
+     * @return The resulting <tt>Class</tt> object
+     * @throws ClassNotFoundException If the class could not be found
      */
     protected Class<?> loadClass(String name, boolean resolve)
-        throws ClassNotFoundException
-    {
+            throws ClassNotFoundException {
         synchronized (getClassLoadingLock(name)) {
             // First, check if the class has already been loaded
             Class<?> c = findLoadedClass(name);
@@ -408,15 +402,17 @@ public abstract class ClassLoader {
                 long t0 = System.nanoTime();
                 try {
                     if (parent != null) {
+                        // 从父类加载
                         c = parent.loadClass(name, false);
                     } else {
+                        // 根加载器
                         c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
                     // ClassNotFoundException thrown if class not found
                     // from the non-null parent class loader
                 }
-
+                // 父类和根都无法加载 则使用自己的类加载器
                 if (c == null) {
                     // If still not found, then invoke findClass in order
                     // to find the class.

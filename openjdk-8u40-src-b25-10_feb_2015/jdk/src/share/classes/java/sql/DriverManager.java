@@ -582,7 +582,7 @@ public class DriverManager {
 
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-
+                // SPI机制 打破双亲委派
                 ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
                 Iterator<Driver> driversIterator = loadedDrivers.iterator();
 

@@ -440,6 +440,7 @@ JavaMain(void * _args)
      *
      * This method also correctly handles launching existing JavaFX
      * applications that may or may not have a Main-Class manifest entry.
+     * 寻找main方法所在的类
      */
     mainClass = LoadMainClass(env, mode, what);
     CHECK_EXCEPTION_NULL_LEAVE(mainClass);
@@ -466,6 +467,7 @@ JavaMain(void * _args)
      * stacks are not in the application stack trace.
      * <p>
      * LoadMainClass 不仅加载 main 类，还将确保 main 方法的签名正确，因此不需要进一步检查。
+     * <p>
      * 此处调用 main 方法，以便应用程序堆栈跟踪中不包含无关的 java 堆栈。
      */
     mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
@@ -1304,6 +1306,8 @@ LoadMainClass(JNIEnv *env, int mode, char *name)
     if (JLI_IsTraceLauncher()) {
         start = CounterGet();
     }
+    // 从C++ 调用到Java
+    // sun.launcher.LauncherHelper
     NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
                 "checkAndLoadMain",
                 "(ZILjava/lang/String;)Ljava/lang/Class;"));

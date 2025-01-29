@@ -914,7 +914,7 @@ Klass* SystemDictionary::find(Symbol* class_name,
     // then the class loader has no entries in the dictionary.
     return NULL;
   }
-
+  // class_name + classLoader = hash
   unsigned int d_hash = dictionary()->compute_hash(class_name, loader_data);
   int d_index = dictionary()->hash_to_index(d_hash);
 

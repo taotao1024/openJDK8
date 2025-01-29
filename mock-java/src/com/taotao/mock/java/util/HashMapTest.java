@@ -5,7 +5,11 @@ import java.util.HashMap;
 
 public class HashMapTest {
 
-    public void testPull() {
+    public static void main(String[] args) {
+        testPull();
+    }
+
+    public static void testPull() {
         HashMap<String, String> map = new HashMap<String, String>() {{
             this.put("1", "1");
             this.put("2", "2");
