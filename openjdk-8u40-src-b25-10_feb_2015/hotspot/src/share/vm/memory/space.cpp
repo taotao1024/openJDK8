@@ -700,21 +700,33 @@ inline HeapWord* ContiguousSpace::allocate_impl(size_t size,
 }
 
 // This version is lock-free.
+/**
+* 真正分配内存的方法
+*/
 inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size,
                                                     HeapWord* const end_value) {
+  /**
+   * 使用CAS机制 实现 指针碰撞的内存分配策略
+   * 指针1 top
+   * 指针2 new_top
+   */
   do {
+    // 当前指针
     HeapWord* obj = top();
+    // 判断剩余内存 是否满足 待分配内存
     if (pointer_delta(end_value, obj) >= size) {
       HeapWord* new_top = obj + size;
+      // 比较并交换
       HeapWord* result = (HeapWord*)Atomic::cmpxchg_ptr(new_top, top_addr(), obj);
       // result can be one of two:
-      //  the old top value: the exchange succeeded
-      //  otherwise: the new value of the top is returned.
+      //  the old top value: the exchange succeeded 交换成功
+      //  otherwise: the new value of the top is returned. 返回new_top
       if (result == obj) {
         assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
         return obj;
       }
     } else {
+      // 触发GC
       return NULL;
     }
   } while (true);
