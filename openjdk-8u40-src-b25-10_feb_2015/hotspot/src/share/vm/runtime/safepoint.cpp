@@ -405,6 +405,9 @@ void SafepointSynchronize::begin() {
 
 // Wake up all threads, so they are ready to resume execution after the safepoint
 // operation has been carried out
+/**
+* 唤醒 被安全点阻塞的线程
+*/
 void SafepointSynchronize::end() {
 
   assert(Threads_lock->owned_by_self(), "must hold Threads_lock");
