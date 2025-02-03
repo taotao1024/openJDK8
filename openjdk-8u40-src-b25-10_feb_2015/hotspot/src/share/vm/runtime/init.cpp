@@ -96,10 +96,13 @@ jint init_globals() {
   HandleMark hm;
   management_init();
   bytecodes_init();
+  // 类加载器
   classLoader_init();
+  // 存储JIT即时编译代码
   codeCache_init();
   VM_Version_init();
   os_init_globals();
+  // 模板解释器字节码编制入口
   stubRoutines_init1();
   jint status = universe_init();  // dependent on codeCache_init and
                                   // stubRoutines_init1 and metaspace_init.
@@ -115,6 +118,7 @@ jint init_globals() {
   SharedRuntime::generate_stubs();
   universe2_init();  // dependent on codeCache_init and stubRoutines_init1
   referenceProcessor_init();
+  // 初始化堆 根据GC收集器 创建对应的堆
   jni_handles_init();
 #if INCLUDE_VM_STRUCTS
   vmStructs_init();
