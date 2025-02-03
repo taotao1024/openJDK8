@@ -531,6 +531,7 @@ HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
          Thread::current()->is_VM_thread())) {
       // If the Heap_lock is not locked by this thread, this will be called
       // again later with the Heap_lock held.
+      // 如果 Heap_lock 未被此线程锁定，则稍后将在按住Heap_lock的情况下再次调用此线程。
       result = from()->allocate(size);
     } else if (PrintGC && Verbose) {
       gclog_or_tty->print_cr("  Heap_lock is not owned by self");
@@ -1022,7 +1023,9 @@ const char* DefNewGeneration::name() const {
 CompactibleSpace* DefNewGeneration::first_compaction_space() const {
   return eden();
 }
-
+/**
+* 堆
+*/
 HeapWord* DefNewGeneration::allocate(size_t word_size,
                                      bool is_tlab) {
   // This is the slow-path allocation for the DefNewGeneration.

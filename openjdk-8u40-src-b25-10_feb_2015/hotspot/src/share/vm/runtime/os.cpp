@@ -73,6 +73,7 @@
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 OSThread*         os::_starting_thread    = NULL;
+// 内存中断测试
 address           os::_polling_page       = NULL;
 volatile int32_t* os::_mem_serialize_page = NULL;
 uintptr_t         os::_serialize_page_mask = 0;

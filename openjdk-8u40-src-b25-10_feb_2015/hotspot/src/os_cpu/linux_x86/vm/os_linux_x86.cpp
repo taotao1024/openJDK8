@@ -418,6 +418,7 @@ JVM_handle_linux_signal(int sig,
       }
     }
 
+    // 检查是否触发 段异常
     // Check to see if we caught the safepoint code in the
     // process of write protecting the memory serialization page.
     // It write enables the page immediately after protecting it
@@ -425,6 +426,7 @@ JVM_handle_linux_signal(int sig,
     if ((sig == SIGSEGV) &&
         os::is_memory_serialize_page(thread, (address) info->si_addr)) {
       // Block current thread until the memory serialize page permission restored.
+      // 安全点的实现 调用OS提供的API
       os::block_on_serialize_page_trap();
       return true;
     }
