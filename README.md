@@ -1,6 +1,8 @@
 # openJDK8
 JDK源码学习
 
+JDK 镜像版本-openjdk-8u40-src-b25-10_feb_2015
+
 ## [目录结构](oracle-jdk8/src/source)
  - [sun](oracle-jdk8/src/source/com/sun) - 不关注
  - [java](oracle-jdk8/src/source/java) - 重点关注
