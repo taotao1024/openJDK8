@@ -2,6 +2,17 @@
 JDK源码学习
 
 JDK 镜像版本-openjdk-8u40-src-b25-10_feb_2015
+## [openjdk-8u40](openjdk-8u40)
+ - [common](openjdk-8u40/common)
+ - [corba](openjdk-8u40/corba) - CORBA的实现
+ - [hotspot](openjdk-8u40/hotspot) - hotspot虚拟机实现
+ - [jaxp](openjdk-8u40/jaxp) JAXP的实现 提供处理XML的API
+ - [jaxws](openjdk-8u40/jaxws) JAX-WS的实现 提供WebService的API
+ - [jdk](openjdk-8u40/jdk) - Java类库实现
+ - [langtools](openjdk-8u40/langtools) - 各种工具
+ - [make](openjdk-8u40/make)
+ - [nashorn](openjdk-8u40/nashorn) - JavaScript的实现
+ - [test](openjdk-8u40/test)
 
 ## [目录结构](oracle-jdk8/src/source)
  - [sun](oracle-jdk8/src/source/com/sun) - 不关注
