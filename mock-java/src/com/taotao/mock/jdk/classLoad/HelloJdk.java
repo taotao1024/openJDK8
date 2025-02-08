@@ -7,14 +7,25 @@ package com.taotao.mock.jdk.classLoad;
  * 4、垃圾收集器
  * 5、JIT 热点代码缓存
  * <p>
+ * {@link sun.jvm.hotspot.oops.Klass}
+ * {@link openjdk-8u40/hotspot/src/share/vm/oops/klass.cpp}
+ * <p>
  * klass:  Java类在JVM中的体现、JAVA类 --> C++类
- *   非ArrayKlass
+ *   非ArrayKlass {@link sun.jvm.hotspot.oops.InstanceKlass}
+ *                {@link openjdk-8u40/hotspot/src/share/vm/oops/instanceKlass.cpp}
  *     InstanceKlass       普通的类在JVM中对应的C++类 元信息 方法区
- *     InstanceMirrorKlass 对应的是Class对象 镜像类  堆区
- *             Mirror 镜子
- *   ArrayKlass
+ *      InstanceMirrorKlass 对应的是Class对象 镜像类  堆区
+ *              Mirror 镜子
+ *      InstanceRefKlass
+ *      InstanceClassLoaderKlass
+ *   ArrayKlass {@link sun.jvm.hotspot.oops.ArrayKlass}
+ *              {@link openjdk-8u40/hotspot/src/share/vm/oops/arrayKlass.cpp}
  *     基本类型数组 boolean、byte、char、short、int、float、long、double
  *     引用类型数组 ObjArrayKlass
+ * <p>
+ * Klass继承体系中涉及的C++类主要提供了两个功能：
+ *  1、提供C++层面的Java类型（包括Java类和Java数组）表示方式，也就是用C++类的对象来描述Java类型；
+ *  2、方法分派。
  * <p>
  * klass模型的存储问题
  *      根类加载器
@@ -61,7 +72,7 @@ package com.taotao.mock.jdk.classLoad;
  * <p>
  * 解析： 符号引用(常量池的索引#01 #02 #03) 变成 直接引用(内存地址 0x0001)
  * 1、类、接口解析
- * 2、字段解析 
+ * 2、字段解析
  * 3、方法解析
  * 4、接口方法解析
  * <p>
@@ -84,7 +95,7 @@ package com.taotao.mock.jdk.classLoad;
  * 3、字符串常量池
  * <p>
  * 初始化：
- * 1、执行静态代码块 执行clinit方法 静态代码块只会生成一个 
+ * 1、执行静态代码块 执行clinit方法 静态代码块只会生成一个
  * 2、完成静态变量的赋值
  */
 public class HelloJdk {

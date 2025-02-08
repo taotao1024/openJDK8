@@ -4,10 +4,14 @@ import java.nio.ByteBuffer;
 
 /**
  * JVM入口
- * openjdk-8u40-src-b25-10_feb_2015/jdk/src/share/bin/java.c
+ * openjdk-8u40/jdk/src/share/bin/main.c
  * <p>
  * 类加载器入口
+ * openjdk-8u40/jdk/src/share/bin/java.c
  * FindBootStrapClass(env, "sun/launcher/LauncherHelper"))
+ * JAVA 对象、方法
+ *       |    |
+ * C++  实例、函数
  */
 public class HelloWorld {
     public static void main(String[] args) {

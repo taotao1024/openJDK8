@@ -56,7 +56,7 @@
 // ALL FUNCTIONS IMPLEMENTING THIS DISPATCH ARE PREFIXED WITH "oop_"!
 
 //  Klass layout:
-//    [C++ vtbl ptr  ] (contained in Metadata)
+//    [C++ vtbl ptr  ] (contained in Metadata) 通过vtbl实现了多态
 //    [layout_helper ]
 //    [super_check_offset   ] for fast subtype checks
 //    [name          ]
@@ -137,6 +137,7 @@ class Klass : public Metadata {
 
   // Class name.  Instance classes: java/lang/String, etc.  Array classes: [I,
   // [Ljava/lang/String;, etc.  Set to zero for all other kinds of classes.
+  // 类名
   Symbol*     _name;
 
   // Cache of last observed secondary supertype
@@ -144,6 +145,7 @@ class Klass : public Metadata {
   // Array of all secondary supertypes
   Array<Klass*>* _secondary_supers;
   // Ordered list of all primary supertypes
+  // 代表父类 其类型是一个Klass指针数组 大小固定为8
   Klass*      _primary_supers[_primary_super_limit];
   // java/lang/Class instance mirroring this class
   oop       _java_mirror;
