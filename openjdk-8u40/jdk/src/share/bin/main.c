@@ -74,6 +74,9 @@
 
 /*
  * Entry point.
+ * 入口点.
+ * main()函数是UNIX、Linux及Mac OS操作系统中C/C++的入口函数
+ * 而Windows的入口函数和它们不一样，这里使用#ifdef条件编译。
  */
 #ifdef JAVAW
 
@@ -89,6 +92,12 @@ WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
     __initenv = _environ;
 
 #else /* JAVAW */
+/**
+ * 入口点.
+ * @param argc 第一个参数argc表示程序运行时发送给
+ * @param argv 第二个参数argc[]为字符串数组，用来存放指向的字符串参数的指针数组，每一个元素指向一个参数
+ * @return 
+ */
 int
 main(int argc, char **argv)
 {
@@ -122,6 +131,10 @@ main(int argc, char **argv)
     margc = argc;
     margv = argv;
 #endif /* WIN32 */
+    /**
+     * JLI_Launch()函数进行了一系列必要的操作，如libjvm.so的加载、参数解析、Classpath的获取和设置、系统属性设置、JVM初始化等。
+     * 该函数会调用LoadJavaVM()加载libjvm.so并初始化相关参数。
+     */
     return JLI_Launch(margc, margv,
                    sizeof(const_jargs) / sizeof(char *), const_jargs,
                    sizeof(const_appclasspath) / sizeof(char *), const_appclasspath,

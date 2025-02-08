@@ -249,7 +249,11 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     if (JLI_IsTraceLauncher()) {
         start = CounterGet();
     }
-
+    /**
+     * openjdk/jdk/src/solaris/bin/java_md_solinux.c #LoadJavaVM(jvmpath, &ifn)
+     * jvmpath    : /openjdk/build/linux-x86_64normal-serverslowdebug/jdk/lib/amd64/server/libjvm.so
+     * ifn        : InvocationFunctions类型变量
+     */
     if (!LoadJavaVM(jvmpath, &ifn)) {
         return(6);
     }
@@ -349,7 +353,10 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
             LEAVE(); \
         } \
     } while (JNI_FALSE)
-
+/**
+ * 下面的步骤都在当前线程的控制下。当控制权转移到Java主类中的main()方法之后，当前线程就不再做其他事情了。
+ * 等main()方法返回之后，当前线程会清理和关闭JVM，调用本地函数 jni_DetachCurrentThread() 断开与主线程的连接。
+ */
 int JNICALL
 JavaMain(void * _args)
 {
@@ -373,6 +380,9 @@ JavaMain(void * _args)
 
     /* Initialize the virtual machine */
     start = CounterGet();
+    // InitializeJVM() 函数初始化JVM，给JavaVM和JNIEnv对象正确赋值，通过调用
+    // InvocationFunctions 结构体下的 CreateJavaVM() 函数指针来实现，该指针在
+    // LoadJavaVM() 函数中指向libjvm.so动态链接库中的 JNI_CreateJavaVM() 函数
     if (!InitializeJVM(&vm, &env, &ifn)) {
         JLI_ReportErrorMessage(JVM_ERROR1);
         exit(1);
@@ -442,6 +452,7 @@ JavaMain(void * _args)
      * applications that may or may not have a Main-Class manifest entry.
      * 寻找main方法所在的类
      */
+    // 加载Java主类
     mainClass = LoadMainClass(env, mode, what);
     CHECK_EXCEPTION_NULL_LEAVE(mainClass);
     /*
@@ -470,6 +481,8 @@ JavaMain(void * _args)
      * <p>
      * 此处调用 main 方法，以便应用程序堆栈跟踪中不包含无关的 java 堆栈。
      */
+    // 从Java主类中查找main()方法对应的唯一ID
+    // 函数查找Java启动方法，其实就是获取Java主类中的main()方法。
     mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
                                        "([Ljava/lang/String;)V");
     CHECK_EXCEPTION_NULL_LEAVE(mainID);
@@ -479,6 +492,9 @@ JavaMain(void * _args)
     CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
 
     /* Invoke main method. */
+    // 调用Java主类中的main()方法
+    // 最终会调用 JavaCalls::call() 函数执行Java主类中的main()方法。
+    // JavaCalls:call()函数是个非常重要的方法，在方法执行引擎时 会涉及到。
     (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
 
     /*
@@ -2011,7 +2027,8 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
       args.mode = mode;
       args.what = what;
       args.ifn = *ifn;
-
+      // 调用ContinueInNewThread0()函数创建一个JVM实例
+      // 在调用ContinueInNewThread0()函数时，传递了JavaMain函数指针和调用此函数需要的参数args
       rslt = ContinueInNewThread0(JavaMain, threadStackSize, (void*)&args);
       /* If the caller has deemed there is an error we
        * simply return that, otherwise we return the value of

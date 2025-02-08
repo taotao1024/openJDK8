@@ -664,14 +664,14 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
     void *libjvm;
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
-
+    // libjvm.so库
     libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
     if (libjvm == NULL) {
         JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
         return JNI_FALSE;
     }
-
+    // 最终会调用libjvm.so 中对应的以JNI_Xxx开头的函数。
     ifn->CreateJavaVM = (CreateJavaVM_t)
         dlsym(libjvm, "JNI_CreateJavaVM");
     if (ifn->CreateJavaVM == NULL) {
@@ -839,8 +839,10 @@ void SplashFreeLibrary() {
     }
 }
 
-/*
+/**
  * Block current thread and continue execution in a new thread
+ * @param continuation  函数的第一个参数int(JNICALL *continuation)(void*)接收的就是JavaMain()函数的指针。
+ * @return
  */
 int
 ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void * args) {
@@ -856,6 +858,8 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
 
     if (pthread_create(&tid, &attr, (void *(*)(void*))continuation, (void*)args) == 0) {
       void * tmp;
+      // 当前线程会阻塞在这里
+      // 在Linux系统中，创建一个pthread_t线程， 然后使用这个新创建的线程执行JavaMain()函数。
       pthread_join(tid, &tmp);
       rslt = (int)tmp;
     } else {
