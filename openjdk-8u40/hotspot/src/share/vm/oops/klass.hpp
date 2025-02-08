@@ -161,14 +161,18 @@ class Klass : public Metadata {
 
   // The VM's representation of the ClassLoader used to load this class.
   // Provide access the corresponding instance java.lang.ClassLoader.
+  // ClassLoaderData指针 可以通过次属性找到 加载该Java类的ClassLoader
   ClassLoaderData* _class_loader_data;
 
   jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
+  // 保存Java类的修饰符，比如 private、final、static、abstract、native
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
   // Biased locking implementation and statistics
   // (the 64-bit chunk goes first, to avoid some fragmentation)
   jlong    _last_biased_lock_bulk_revocation_time;
+  // 当此类型同时启用和禁用偏置锁定时使用
+  // 支持偏向锁 在锁的实现过程中非常重要
   markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
 
