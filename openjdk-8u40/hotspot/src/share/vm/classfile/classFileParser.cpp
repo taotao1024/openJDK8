@@ -3712,7 +3712,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   bool has_default_methods = false;
   bool declares_default_methods = false;
   ResourceMark rm(THREAD);
-
+  // 读取文件
   ClassFileStream* cfs = stream();
   // Timing
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
@@ -3840,7 +3840,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   // Do not restrict it to jdk1.0 or jdk1.1 to maintain backward compatibility (4982376)
   _relax_verify = Verifier::relax_verify_for(class_loader());
 
-  // Constant pool
+  // Constant pool 常亮池解析
   constantPoolHandle cp = parse_constant_pool(CHECK_(nullHandle));
 
   int cp_size = cp->length();
@@ -3925,23 +3925,24 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 #endif
 
     u2 super_class_index = cfs->get_u2_fast();
+    // 父类解析
     instanceKlassHandle super_klass = parse_super_class(super_class_index,
                                                         CHECK_NULL);
 
-    // Interfaces
+    // Interfaces 接口解析
     u2 itfs_len = cfs->get_u2_fast();
     Array<Klass*>* local_interfaces =
       parse_interfaces(itfs_len, protection_domain, _class_name,
                        &has_default_methods, CHECK_(nullHandle));
 
     u2 java_fields_count = 0;
-    // Fields (offsets are filled in later)
+    // Fields (offsets are filled in later) 字段解析
     FieldAllocationCount fac;
     Array<u2>* fields = parse_fields(class_name,
                                      access_flags.is_interface(),
                                      &fac, &java_fields_count,
                                      CHECK_(nullHandle));
-    // Methods
+    // Methods 方法解析
     bool has_final_method = false;
     AccessFlags promoted_flags;
     promoted_flags.set_flags(0);
@@ -3954,7 +3955,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       has_default_methods = true;
     }
 
-    // Additional attributes
+    // Additional attributes 注解解析
     ClassAnnotationCollector parsed_annotations;
     parse_classfile_attributes(&parsed_annotations, CHECK_(nullHandle));
 
@@ -4034,7 +4035,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
     // Size of Java itable (in words)
     itable_size = access_flags.is_interface() ? 0 : klassItable::compute_itable_size(_transitive_interfaces);
-
+    // 调整变量的内存布局
     FieldLayoutInfo info;
     layout_fields(class_loader, &fac, &parsed_annotations, &info, CHECK_NULL);
 
@@ -4170,6 +4171,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     // Allocate mirror and initialize static fields
+    // 生成镜像类
     java_lang_Class::create_mirror(this_klass, class_loader, protection_domain,
                                    CHECK_(nullHandle));
 
