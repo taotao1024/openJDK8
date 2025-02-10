@@ -43,6 +43,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   friend class InstanceKlass;
 
  private:
+   // 静态字段的其实偏移量
   static int _offset_of_static_fields;
 
   // Constructor

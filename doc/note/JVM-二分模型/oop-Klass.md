@@ -17,4 +17,15 @@ oop（ordinary object pointer）指普通的对象指针，Klass表示对象的�
 在HotSpot中，Java对象使用oop实例来表示，不提供任何虚函数的功能。
 oop实例保存了对应Klass的指针，通过Klass完成所有的方法调用并获取类型信息，Klass基于C++的虚函数提供对Java多态的支持。
 
+- Klass子类如下
+  - InstanceKlass
+    - InstanceRefKlass
+      - 表示java.lang.ref.Reference类 需要使用C++类InstanceRefKlass的实例来表示
+    - InstanceMirrorKlass
+      - 表示java.lang.Class类的InstanceMirrorKlass
+    - InstanceClassLoaderKlass
+      - 表示java.lang.ClassLoader类的InstanceClassLoaderKlass
+      - 没有添加新的字段，但增加了新的oop遍历方法，在垃圾回收阶段遍历类加载器加载的所有类来标记引用的所有对象
+
 ## Oop [oop.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/oop.cpp)
+  对象

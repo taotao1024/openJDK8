@@ -125,6 +125,9 @@ class Klass : public Metadata {
   //
   // Final note:  This comes first, immediately after C++ vtable,
   // because it is frequently queried.
+  // 对象布局的综合描述符
+  // _layout_helper是一个组合属性。如果当前的Klass实例表示一个Java数组类型，则这个属性的值比较复杂。
+  // array_layout_helper(BasicType etype)、instance_layout_helper()
   jint        _layout_helper;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
@@ -133,35 +136,46 @@ class Klass : public Metadata {
   //
   // Where to look to observe a supertype (it is &_secondary_super_cache for
   // secondary supers, else is &_primary_supers[depth()].
+  // 快速查询supertype的一个偏移量，这个偏移量是相对于Klass实例起始地址的偏移量。
   juint       _super_check_offset;
 
   // Class name.  Instance classes: java/lang/String, etc.  Array classes: [I,
   // [Ljava/lang/String;, etc.  Set to zero for all other kinds of classes.
-  // 类名
+  // 类名 如java/lang/String、[Ljava/lang/String等
   Symbol*     _name;
 
   // Cache of last observed secondary supertype
+  // Klass指针，保存上一次查询父类的结果
   Klass*      _secondary_super_cache;
   // Array of all secondary supertypes
+  // Klass指针数组 一般存储Java类实现的接口，偶尔还会存储Java类及其父类
   Array<Klass*>* _secondary_supers;
   // Ordered list of all primary supertypes
   // 代表父类 其类型是一个Klass指针数组 大小固定为8
+  // 例如 IOException是Exception的子类，Exception是Throwable的子类。因此IOException类的_primary_supers
+  // 属性为[Trrowable,Exception,IOException] 如果继承链过长，既当前类加上继承类多余8个时，会将多出来的类存储到
+  // _secondary_supers数组中
   Klass*      _primary_supers[_primary_super_limit];
   // java/lang/Class instance mirroring this class
+  // oopDesc*类型，保存的是当前Klass实例表示的java类所对应的java.lang.Class对象，可以据此访问类的静态属性。
   oop       _java_mirror;
   // Superclass
+  // Klass指针，指向Java类的直接父类。
   Klass*      _super;
   // First subclass (NULL if none); _subklass->next_sibling() is next one
+  // Klass指针，只想java类的直接子类，由于直接子类可能有多个，因此多个子类会通过_next_sibling连接起来
   Klass*      _subklass;
   // Sibling link (or NULL); links all subklasses of a klass
+  // Klass指针，通过该属性可以获取当前类的下一个子类，可以通过调用语句_subklass->next_sibling()获取_subklass的兄弟子类。
   Klass*      _next_sibling;
 
   // All klasses loaded by a class loader are chained through these links
+  // Klass指针，ClassLoader加载的下一个Klass
   Klass*      _next_link;
 
   // The VM's representation of the ClassLoader used to load this class.
   // Provide access the corresponding instance java.lang.ClassLoader.
-  // ClassLoaderData指针 可以通过次属性找到 加载该Java类的ClassLoader
+  // ClassLoaderData指针 可以通过此属性找到 加载该Java类的ClassLoader
   ClassLoaderData* _class_loader_data;
 
   jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
@@ -383,11 +397,26 @@ protected:
         err_msg("sanity. l2esz: 0x%x for lh: 0x%x", (uint)l2esz, (uint)lh));
     return l2esz;
   }
+  /**
+   * Java数组类型的_layout_helper
+   *
+   *
+   * @param tag        如果数组元素的类型为对象类型，则值为0x80，否则值为0xC0，表示数组元素的类型为Java基本类型。
+   *                   0x80 --> _lh_array_tag_type_value
+   *                   0xC0 --> _lh_array_tag_obj_value
+   * @param hsize      hsize表示数组头元素的字节数，调用arrayOopDesc::base_offset_in_bytes()及相关函数可以获取hsize的值
+   * @param etype      etype表示数组元素的类型
+  * @param log2_esize  esize表示数组元素的大小
+   */
   static jint array_layout_helper(jint tag, int hsize, BasicType etype, int log2_esize) {
-    return (tag        << _lh_array_tag_shift)
-      |    (hsize      << _lh_header_size_shift)
-      |    ((int)etype << _lh_element_type_shift)
-      |    (log2_esize << _lh_log2_element_size_shift);
+    // 最终计算出来的 数组类型的_layout_helper值为负数 最高位:1
+    // 最终计算出来的 对象类型的_layout_helper值为正数 最高位:0
+    // 元素类型为对象类型数组  11+hsize(14位)+etype(8位)+log2(8位)
+    // 元素类型为Java类型数组 10+hsize(14位)+etype(8位)+log2(8位)
+    return (tag        << _lh_array_tag_shift) // 左移30位
+      |    (hsize      << _lh_header_size_shift) // 左移16位
+      |    ((int)etype << _lh_element_type_shift) // 左移8位
+      |    (log2_esize << _lh_log2_element_size_shift);// 左移0位
   }
   static jint instance_layout_helper(jint size, bool slow_path_flag) {
     return (size << LogHeapWordSize)
@@ -419,14 +448,19 @@ protected:
   bool is_subclass_of(const Klass* k) const;
   // subtype check: true if is_subclass_of, or if k is interface and receiver implements it
   bool is_subtype_of(Klass* k) const {
+    // 判断当前类是否为k的子类。k可能为接口，如果当前类型实现了k接口，函数也返回true
     juint    off = k->super_check_offset();
     Klass* sup = *(Klass**)( (address)this + off );
     const juint secondary_offset = in_bytes(secondary_super_cache_offset());
+    // // 如果k在_primary_supers中，那么利用_primary_supers一定能判断出k与当前类的父子关系
     if (sup == k) {
       return true;
     } else if (off != secondary_offset) {
+      // 如果k存储在_secondary_supers中，那么当前类也肯定存储在secondary_sueprs中
+      // 如果两者有父子关系，那么_super_check_offset需要与_secondary_super_cache相等
       return false;
     } else {
+      // 可能有父子关系，需要进一步判断
       return search_secondary_supers(k);
     }
   }

@@ -30,11 +30,17 @@
 // ReferenceType is used to distinguish between java/lang/ref/Reference subclasses
 
 enum ReferenceType {
+  // 普通类，也就是非引用类型
+  // 表示java/lang/ref/Reference子类，但是这个子类不是REF_SOFT、REF_WEAK、REF_FINAL、REF_PHANTOM中的任何一种
   REF_NONE,      // Regular class
   REF_OTHER,     // Subclass of java/lang/ref/Reference, but not subclass of one of the classes below
+  // 表示java/lang/ref/SoftReference类及其子类
   REF_SOFT,      // Subclass of java/lang/ref/SoftReference
+  // 表示 java/lang/ref/WeakReference类及其子类
   REF_WEAK,      // Subclass of java/lang/ref/WeakReference
+  // 表示 java/lang/ref/FinalReference类及其子类
   REF_FINAL,     // Subclass of java/lang/ref/FinalReference
+  // 表示 java/lang/ref/PhantomReference类及其子类
   REF_PHANTOM,   // Subclass of java/lang/ref/PhantomReference
   REF_CLEANER    // Subclass of sun/misc/Cleaner
 };

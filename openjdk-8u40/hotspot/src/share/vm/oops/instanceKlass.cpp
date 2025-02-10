@@ -170,7 +170,12 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
 #endif //  ndef DTRACE_ENABLED
 
 volatile int InstanceKlass::_total_instanceKlass_count = 0;
-
+/**
+ * 下HotSpot VM创建Klass类的实例的过程
+ * InstanceKlass::allocate_instance_klass()函数创建InstanceKlass实例。
+ * 在创建时首先需要分配内存，这涉及C++对new运算符重载的调用，通过重载new运算符的函数为对象分配内存空间，
+ * 然后再调用类的构造函数初始化相关的属性。
+ */
 InstanceKlass* InstanceKlass::allocate_instance_klass(
                                               ClassLoaderData* loader_data,
                                               int vtable_len,
@@ -183,18 +188,23 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(
                                               Klass* super_klass,
                                               bool is_anonymous,
                                               TRAPS) {
-
+  // 计算分配的内存大小
+  // 获取创建InstanceKlass实例时需要分配的内存空间
   int size = InstanceKlass::size(vtable_len, itable_len, nonstatic_oop_map_size,
                                  access_flags.is_interface(), is_anonymous);
 
   // Allocation
+  // 后根据需要创建的类型rt创建不同的C++类实例
   InstanceKlass* ik;
   if (rt == REF_NONE) {
+    // 通过InstanceMirrorKlass实例表示java.lang.Class类
     if (name == vmSymbols::java_lang_Class()) {
       ik = new (loader_data, size, THREAD) InstanceMirrorKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
         access_flags, is_anonymous);
-    } else if (name == vmSymbols::java_lang_ClassLoader() ||
+    }
+    // 通过InstanceClassLoaderKlass实例表示java.lang.ClassLoader或相关子类
+    else if (name == vmSymbols::java_lang_ClassLoader() ||
           (SystemDictionary::ClassLoader_klass_loaded() &&
           super_klass != NULL &&
           super_klass->is_subtype_of(SystemDictionary::ClassLoader_klass()))) {
@@ -203,12 +213,14 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(
         access_flags, is_anonymous);
     } else {
       // normal class
+      // 通过InstanceKlass实例表示普通类
       ik = new (loader_data, size, THREAD) InstanceKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
         access_flags, is_anonymous);
     }
   } else {
     // reference klass
+    // 通过InstanceRefKlass实例表示引用类型
     ik = new (loader_data, size, THREAD) InstanceRefKlass(
         vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
         access_flags, is_anonymous);

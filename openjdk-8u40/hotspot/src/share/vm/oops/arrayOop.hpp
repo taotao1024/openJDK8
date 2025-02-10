@@ -48,6 +48,9 @@ class arrayOopDesc : public oopDesc {
   // The header is considered the oop part of this type plus the length.
   // Returns the aligned header_size_in_bytes.  This is not equivalent to
   // sizeof(arrayOopDesc) which should not appear in the code.
+  // 在默认参数下，存放_metadata的空间容量是8字节，_mark是8字节
+  // length是4字节，对象头为20字节，由于要按8字节对齐，所以会填充4字节
+  // 最终占用24字节
   static int header_size_in_bytes() {
     size_t hs = align_size_up(length_offset_in_bytes() + sizeof(int),
                               HeapWordSize);
@@ -64,6 +67,8 @@ class arrayOopDesc : public oopDesc {
   // The _length field is not declared in C++.  It is allocated after the
   // declared nonstatic fields in arrayOopDesc if not compressed, otherwise
   // it occupies the second half of the _klass field in oopDesc.
+  // 使用+UseCompressedClassPointers来压缩指针 默认值为 true
+  // sizeof(arrayOopDesc)的返回值为16 其中_mark和_metadata._klass各占用8字节
   static int length_offset_in_bytes() {
     return UseCompressedClassPointers ? klass_gap_offset_in_bytes() :
                                sizeof(arrayOopDesc);
