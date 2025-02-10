@@ -119,6 +119,11 @@ public class DescriptorStream2 extends ResourceObj {
         return types;
     }
 
+    /**
+     * 获取参数
+     * @param frame
+     * @return
+     */
     public Object[] getParamsVal(JavaVFrame frame) {
         Object[] vals = new Object[getMethodParamsSize()];
 

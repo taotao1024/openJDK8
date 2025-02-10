@@ -5,9 +5,9 @@ import lombok.Data;
 
 @Data
 public class JavaVFrame extends VFrame {
-
+    // 局部变量表
     private StackValueCollection locals;
-
+    // 操作数栈
     private StackValueCollection stack = new StackValueCollection();
 
     private MethodInfo ownerMethod;

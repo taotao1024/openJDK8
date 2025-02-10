@@ -48,7 +48,7 @@ public class BytecodeInterpreter extends StackObj {
                             int index = (int) method.getBelongKlass().getConstantPool().getDataMap().get(operand);
 
                             String content = (String) method.getBelongKlass().getConstantPool().getDataMap().get(index);
-
+                            // 获取到操作数栈
                             frame.getStack().push(new StackValue(BasicType.T_OBJECT, content));
 
                             break;
@@ -127,7 +127,7 @@ public class BytecodeInterpreter extends StackObj {
 
                         Object[] params = descriptorStream.getParamsVal(frame);
                         Class[] paramsClass = descriptorStream.getParamsType();
-
+                        // this 不能作为参数 去取
                         Object obj = frame.getStack().pop().getObject();
 
                         try {
