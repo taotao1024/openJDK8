@@ -59,6 +59,17 @@ class ParCompactionManager;
 class oopDesc {
   friend class VMStructs;
  private:
+ /**
+  * Java对象内存布局主要分为header（头部）和fields（实例字段）。
+  * header由 _mark和 _metadata组成：
+  *   _mark字段保存了Java对象的一些信息，如GC分代年龄、锁状态等。 另一种叫法是 mark_word
+  *   _metadata 是存储指向元数据区对象类型数据的指针 使用联合体（union）来声明。
+  *     这样是为了在64位平台能对指针进行压缩。
+  *     从32位平台到64位平台，指针由4字节变为了8字节，因此通常64位的HotSpot VM消耗的内存比32位的大，造成堆内存损失。
+  *     不过从JDK 1.6 update14开始，64位的HotSpot VM正式支持-XX:+UseCompressedOops命令（默认开启）。
+  *     该命令可以压缩指针，起到节约内存占用的作用。
+  * fields 没有在oopDesc类中定义相应的属性来存储，因此只能申请一定的内存空间，然后按一定的布局规则进行存储。
+  */
   volatile markOop  _mark;
   union _metadata {
     Klass*      _klass;
@@ -96,6 +107,7 @@ class oopDesc {
   oop list_ptr_from_klass();
 
   // size of object header, aligned to platform wordSize
+  // 调用header_size()函数获取header占用的内存空间
   static int header_size()          { return sizeof(oopDesc)/HeapWordSize; }
 
   // Returns whether this is an instance of k or an instance of a subclass of k

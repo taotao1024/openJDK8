@@ -7,13 +7,25 @@ import java.util.List;
 
 @Data
 public class InstanceKlass extends Klass {
-
+    /**
+     * 魔数
+     */
     private byte[] magic = new byte[4];
+    /**
+     * 主版本号
+     */
     private byte[] minorVersion = new byte[2];
+    /**
+     * 次版本号
+     */
     private byte[] majorVersion = new byte[2];
-
+    /**
+     * 常量池
+     */
     private ConstantPool constantPool;
-
+    /**
+     * 访问标志
+     */
     private int accessFlag;
     private int thisClass;
     private int superClass;

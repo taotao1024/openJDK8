@@ -21,7 +21,7 @@ public class JavaNativeInterface {
 
     public static MethodInfo getMethodID(InstanceKlass klass, String name, String descriptorName) {
         MethodInfo[] methods = klass.getMethods();
-        for (MethodInfo method:methods) {
+        for (MethodInfo method : methods) {
             String tmpName = (String) klass.getConstantPool().getDataMap().get(method.getNameIndex());
             String tmpDescriptor = (String) klass.getConstantPool().getDataMap().get(method.getDescriptorIndex());
 
@@ -48,7 +48,7 @@ public class JavaNativeInterface {
 
         // 创建栈帧
         JavaVFrame frame = new JavaVFrame(codeAttributeInfo.getMaxLocals(), method);
-
+        // main 方法压栈
         thread.getStack().push(frame);
 
         logger.info("第 " + thread.getStack().size() + " 个栈帧");

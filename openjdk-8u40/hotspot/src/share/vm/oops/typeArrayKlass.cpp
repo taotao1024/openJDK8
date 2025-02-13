@@ -55,13 +55,14 @@ bool TypeArrayKlass::compute_is_subtype_of(Klass* k) {
 
 TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
                                       const char* name_str, TRAPS) {
+  // 在HotSpot中，所有的字符串都通过Symbol实例来表示，以达到重用的目的
   Symbol* sym = NULL;
   if (name_str != NULL) {
     sym = SymbolTable::new_permanent_symbol(name_str, CHECK_NULL);
   }
-
+  // 使用系统类加载器加载数组类型
   ClassLoaderData* null_loader_data = ClassLoaderData::the_null_class_loader_data();
-
+  // 创建TypeArrayKlass并完成部分属性的初始化
   TypeArrayKlass* ak = TypeArrayKlass::allocate(null_loader_data, type, sym, CHECK_NULL);
 
   // Add all classes to our internal class loader list here,
@@ -70,6 +71,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   null_loader_data->add_class(ak);
 
   // Call complete_create_array_klass after all instance variables have been initialized.
+  // 初始化TypeArrayKlass中的属性
   complete_create_array_klass(ak, ak->super(), CHECK_NULL);
 
   return ak;
@@ -83,12 +85,14 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
 
   return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
 }
-
+/**
+* 构造函数
+*/
 TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name) {
   set_layout_helper(array_layout_helper(type));
   assert(oop_is_array(), "sanity");
   assert(oop_is_typeArray(), "sanity");
-
+  // 设置数组的最大长度
   set_max_length(arrayOopDesc::max_array_length(type));
   assert(size() >= TypeArrayKlass::header_size(), "bad size");
 

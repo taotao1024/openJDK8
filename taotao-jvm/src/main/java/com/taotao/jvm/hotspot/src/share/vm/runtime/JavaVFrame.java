@@ -3,11 +3,18 @@ package com.taotao.jvm.hotspot.src.share.vm.runtime;
 import com.taotao.jvm.hotspot.src.share.vm.oops.MethodInfo;
 import lombok.Data;
 
+/**
+ * 创建栈帧
+ */
 @Data
 public class JavaVFrame extends VFrame {
-    // 局部变量表
+    /**
+     * 局部变量表
+     */
     private StackValueCollection locals;
-    // 操作数栈
+    /**
+     * 操作数栈
+     */
     private StackValueCollection stack = new StackValueCollection();
 
     private MethodInfo ownerMethod;

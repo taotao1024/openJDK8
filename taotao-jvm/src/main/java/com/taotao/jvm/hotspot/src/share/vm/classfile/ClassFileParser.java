@@ -47,7 +47,7 @@ public class ClassFileParser {
 
         klass.getConstantPool().initContainer();
 
-        // 常量池 N字节
+        // 常量池 N字节 解析常量池
         index = parseConstantPool(content, klass, index);
 
         // 类的访问权限 2B
@@ -98,7 +98,7 @@ public class ClassFileParser {
 
         klass.initMethodsContainer();
 
-        // 方法
+        // 方法 解析方法
         index = parseMethods(content, klass, index);
 
         // 属性数量

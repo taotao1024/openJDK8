@@ -67,7 +67,9 @@ ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klas
 
   return new (loader_data, size, THREAD) ObjArrayKlass(n, klass_handle, name);
 }
-
+/**
+* 创建组合类型为element_klass的n维数组
+*/
 Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
                                                 int n, KlassHandle element_klass, TRAPS) {
 
@@ -143,11 +145,13 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
   }
 
   // Initialize instance variables
+  // 创建组合类型为element_klass、维度为n、名称为name的数组
   ObjArrayKlass* oak = ObjArrayKlass::allocate(loader_data, n, element_klass, name, CHECK_0);
 
   // Add all classes to our internal class loader list here,
   // including classes in the bootstrap (NULL) class loader.
   // GC walks these as strong roots.
+  // 将创建的类型加到类加载器列表中，在垃圾回收时会当作强根处理
   loader_data->add_class(oak);
 
   // Call complete_create_array_klass after all instance variables has been initialized.
@@ -337,6 +341,7 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
     ResourceMark rm;
     JavaThread *jt = (JavaThread *)THREAD;
     {
+      // 通过锁保证创建一维数组类型的原子性
       MutexLocker mc(Compile_lock, THREAD);   // for vtables
       // Ensure atomic creation of higher dimensions
       MutexLocker mu(MultiArray_lock, THREAD);
@@ -345,6 +350,8 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
       if (higher_dimension() == NULL) {
 
         // Create multi-dim klass object and link them together
+        // 创建以当前InstanceKlass实例为基本类型的一维类 型数组，创建成功后保存到
+        // _array_klasses 属性中，避免下次再重新创建
         Klass* k =
           ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
         ObjArrayKlass* ak = ObjArrayKlass::cast(k);

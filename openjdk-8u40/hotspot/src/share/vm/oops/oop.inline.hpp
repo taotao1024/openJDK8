@@ -155,7 +155,7 @@ inline bool oopDesc::is_instanceRef()         const { return klass()->oop_is_ins
 inline bool oopDesc::is_array()               const { return klass()->oop_is_array(); }
 inline bool oopDesc::is_objArray()            const { return klass()->oop_is_objArray(); }
 inline bool oopDesc::is_typeArray()           const { return klass()->oop_is_typeArray(); }
-
+//用于获取字段地址 实现代码
 inline void*     oopDesc::field_base(int offset)        const { return (void*)&((char*)this)[offset]; }
 
 template <class T> inline T* oopDesc::obj_field_addr(int offset) const { return (T*)field_base(offset); }

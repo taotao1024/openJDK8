@@ -595,12 +595,15 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
     java_lang_Class::set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
 
     // It might also have a component mirror.  This mirror must already exist.
+    // k是ArrayKlass实例
     if (k->oop_is_array()) {
       Handle comp_mirror;
+      // k是TypeArrayKlass实例
       if (k->oop_is_typeArray()) {
         BasicType type = TypeArrayKlass::cast(k())->element_type();
         comp_mirror = Universe::java_mirror(type);
       } else {
+        // k是ObjArrayKlass实例
         assert(k->oop_is_objArray(), "Must be");
         Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
@@ -613,7 +616,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
       set_array_klass(comp_mirror(), k());
     } else {
       assert(k->oop_is_instance(), "Must be");
-
+      // 初始化本地静态字段的值，静态字段存储在java.lang.Class对象中
       initialize_mirror_fields(k, mirror, protection_domain, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // If any of the fields throws an exception like OOM remove the klass field

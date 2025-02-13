@@ -35,7 +35,9 @@
 class ObjArrayKlass : public ArrayKlass {
   friend class VMStructs;
  private:
+  // 数组的组件类型
   Klass* _element_klass;            // The klass of the elements of this array type
+  // 数组的元素类型
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
 
   // Constructor

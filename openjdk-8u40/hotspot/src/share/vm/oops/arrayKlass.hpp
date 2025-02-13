@@ -36,10 +36,15 @@ class klassVtable;
 class ArrayKlass: public Klass {
   friend class VMStructs;
  private:
+   // 当前实例 表示的是n维数组
   int      _dimension;         // This is n'th-dimensional array.
+  // 指向n+1维的数组
   Klass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
+  // 指向n-1维的数组
   Klass* volatile _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+  // vtable的大小 保存虚函数表的长度
   int      _vtable_len;        // size of vtable for this klass
+  // 组件类型对应的java.lang.Class对象的oop
   oop      _component_mirror;  // component type, as a java/lang/Class
 
  protected:

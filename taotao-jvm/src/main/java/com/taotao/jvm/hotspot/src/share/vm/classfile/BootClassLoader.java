@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *  根类加载器
+ * 根类加载器
  */
 @Data
 public class BootClassLoader {
@@ -17,21 +17,19 @@ public class BootClassLoader {
     public static final String SUFFIX = ".class";
 
     /**
-     *  该类加载器的加载路径
-     *      多个路径以分号分隔
-     *      只有一个的话，分号可省略
-     *
-     *  注意路径后面的斜杠不可丢
+     * 该类加载器的加载路径:多个路径以分号分隔
+     * <p>
+     * 注意路径后面的斜杠不可丢
      */
-    private static String searchPath = "D:\\006.work-java\\ziya\\ziya-jvm-open\\target\\classes\\";
+    private static String searchPath = "D:\\002.code\\taotao1024\\openJDK8\\taotao-jvm\\target\\classes\\";
 
     /**
-     *  用于存储该类加载器加载的所有类
+     * 用于存储该类加载器加载的所有类
      */
     private static Map<String, InstanceKlass> classLoaderData = new HashMap<>();
 
     /**
-     *  main函数所在的类在此保存一份引用，方便快速定位到
+     * main函数所在的类在此保存一份引用，方便快速定位到
      */
     private static InstanceKlass mainKlass = null;
 
@@ -52,7 +50,7 @@ public class BootClassLoader {
         if (null != klass) {
             return klass;
         }
-
+        // 类加载、解析
         klass = readAndParse(name);
 
         if (resolve) {
@@ -72,7 +70,7 @@ public class BootClassLoader {
         // 解析字节码文件
         InstanceKlass klass = ClassFileParser.parseClassFile(content);
 
-        // 存入
+        // 存入 key class引用 instanceKlass对象
         classLoaderData.put(name, klass);
 
         return klass;

@@ -85,6 +85,7 @@
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // Known objects
+// 静态属性
 Klass* Universe::_boolArrayKlassObj                 = NULL;
 Klass* Universe::_byteArrayKlassObj                 = NULL;
 Klass* Universe::_charArrayKlassObj                 = NULL;
@@ -265,7 +266,7 @@ void Universe::genesis(TRAPS) {
 
       // determine base vtable size; without that we cannot create the array klasses
       compute_base_vtable_size();
-
+    // HotSpot VM在初始化时就会创建Java中8个基本类型的一维数组实 例TypeArrayKlass
       if (!UseSharedSpaces) {
         _boolArrayKlassObj      = TypeArrayKlass::create_klass(T_BOOLEAN, sizeof(jboolean), CHECK);
         _charArrayKlassObj      = TypeArrayKlass::create_klass(T_CHAR,    sizeof(jchar),    CHECK);
@@ -447,7 +448,7 @@ void Universe::init_self_patching_vtbl_list(void** list, int count) {
   { Method o;                 add_vtable(list, &n, &o, count); }
   { ConstantPool o;           add_vtable(list, &n, &o, count); }
 }
-
+// 创建表示基本类型的java.lang.Class对象，该对象用oop表示，所以_bool_mirror 的类型为oop
 void Universe::initialize_basic_type_mirrors(TRAPS) {
     assert(_int_mirror==NULL, "basic type mirrors already initialized");
     _int_mirror     =

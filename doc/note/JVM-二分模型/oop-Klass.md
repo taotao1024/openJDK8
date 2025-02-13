@@ -26,6 +26,29 @@ oop实例保存了对应Klass的指针，通过Klass完成所有的方法调用�
     - InstanceClassLoaderKlass
       - 表示java.lang.ClassLoader类的InstanceClassLoaderKlass
       - 没有添加新的字段，但增加了新的oop遍历方法，在垃圾回收阶段遍历类加载器加载的所有类来标记引用的所有对象
-
+  - ArrayKlass
+    - 数组类没有对应的Class文件，是由虚拟机直接创建的。 
+    - TypeArrayKlass [typeArrayKlass.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/typeArrayKlass.cpp)
+      - 表示组件类型是java基本类型
+      - HotSpot VM在初始化时就会创建Java中8个基本类型的一维数组实 例TypeArrayKlass。
+    - ObjArrayKlass [objArrayKlass.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/objArrayKlass.cpp)
+      - 表示组件类型是对象类型
 ## Oop [oop.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/oop.cpp)
-  对象
+ - oopDesc类的别名为oop，因此HotSpot VM中一般使用oop表示oopDesc类型。
+ - Java对象用oop来表示，在Java创建对象的时候创建。
+ - 也就是说，在Java应用程序运行过程中每创建一个Java对象，在HotSpot VM内部都会创建一个oop实例来表示Java对象。
+
+![oopDesc类的继承关系.png](../../images/JVM-%E4%BA%8C%E5%88%86%E6%A8%A1%E5%9E%8B/oopDesc%E7%B1%BB%E7%9A%84%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png)
+
+- oopDesc子类如下 [oop.hpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/oop.hpp)
+  - instanceOopDesc [instanceOop.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/instanceOop.cpp)
+    - instanceOopDesc类的实例表示除数组对象外的其他对象
+  - markOopDesk [markOop.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/markOop.cpp)
+    - markOopDesc类的实例并不能表示一个具体的Java对象，而是通过一个字的各个位来表示Java对象的头信息。
+    - 包含的信息有哈希码、GC分代年龄、偏向锁标记、线程持有的锁、偏向线程ID和偏向时间戳 等。
+    - 因此表示普通Java类对象的instanceOopDesc实例和表示数组对象的objArrayOopDesc与typeArrayOopDesc实例都含有markOopDesc实例。
+  - arrayOopDesc
+    - objArrayOopDesc
+      - 组件类型为基本类型、二维及二维以上的数组
+    - typeArrayOopDesc
+      - 组件类型为对象类型

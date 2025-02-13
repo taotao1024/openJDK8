@@ -419,12 +419,14 @@ protected:
       |    (log2_esize << _lh_log2_element_size_shift);// 左移0位
   }
   static jint instance_layout_helper(jint size, bool slow_path_flag) {
+    // // 保存时，size值左移3位，低3位用来保存其他信息
     return (size << LogHeapWordSize)
       |    (slow_path_flag ? _lh_instance_slow_path_bit : 0);
   }
   static int layout_helper_to_size_helper(jint lh) {
     assert(lh > (jint)_lh_neutral_value, "must be instance");
     // Note that the following expression discards _lh_instance_slow_path_bit.
+    // LogHeapWordSize的值为3，向右移3位
     return lh >> LogHeapWordSize;
   }
   // Out-of-line version computes everything based on the etype:
