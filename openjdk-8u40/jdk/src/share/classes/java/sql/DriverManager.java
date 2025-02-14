@@ -30,6 +30,8 @@ import java.util.ServiceLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import sun.misc.Launcher;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
@@ -582,7 +584,10 @@ public class DriverManager {
 
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                // SPI机制 打破双亲委派
+                /**
+                 * SPI机制 打破双亲委派 由AppClassLoader加载器 直接加载
+                 * {@link Launcher#Launcher()} 将 AppClassLoader 设置到 Thread.currentThread() 中
+                 */
                 ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
                 Iterator<Driver> driversIterator = loadedDrivers.iterator();
 

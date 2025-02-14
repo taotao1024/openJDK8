@@ -119,11 +119,16 @@ void HandleMark::initialize(Thread* thread) {
   debug_only(Atomic::inc(&_nof_handlemarks);)
 
   // Link this in the thread
+  // 将当前HandleMark实例同线程关联起来
   set_previous_handle_mark(thread->last_handle_mark());
+  // 注意，线程中的_last_handle_mark属性用来保存HandleMark对象
   thread->set_last_handle_mark(this);
 }
 
-
+/**
+* ~ 是 析构函数（Destructor） 的标识符。
+* 它用于定义类的析构函数，析构函数在对象销毁时自动调用，用于释放对象占用的资源。
+*/
 HandleMark::~HandleMark() {
   HandleArea* area = _area;   // help compilers with poor alias analysis
   assert(area == _thread->handle_area(), "sanity check");
@@ -161,11 +166,23 @@ HandleMark::~HandleMark() {
     // arena size could exceed total chunk size
     assert(area->size_in_bytes() > size_in_bytes(), "Sanity check");
     area->set_size_in_bytes(size_in_bytes());
+    // 删除当前Chunk以后的所有Chunk，即在方法调用期间新创建的Chunk
     _chunk->next_chop();
   } else {
+    // 如果没有下一个Chunk，说明未分配新的Chunk，则area的大小应该保持不变
     assert(area->size_in_bytes() == size_in_bytes(), "Sanity check");
   }
   // Roll back arena to saved top markers
+  /*
+    恢复area的属性至HandleMark构造时的状态
+      创建一个新的HandleMark以后，它保存当前线程
+    的area的_chunk、_hwm和_max等属性，代码执行期间
+    新创建的Handle实例是在当前线程的area中分配内
+    存，这会导致当前线程的area的_chunk、_hwm和_max
+    等属性发生变化，因此代码执行完成后需要将这些属
+    性恢复至之前的状态，并释放代码执行过程中新创建
+    的Handle实例的内存。
+   */
   area->_chunk = _chunk;
   area->_hwm = _hwm;
   area->_max = _max;
@@ -178,6 +195,7 @@ HandleMark::~HandleMark() {
 #endif
 
   // Unlink this from the thread
+  // 解除当前HandleMark与线程的关联
   _thread->set_last_handle_mark(previous_handle_mark());
 }
 

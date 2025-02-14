@@ -114,11 +114,13 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
       }
       return t;
     } else {
+      // 抛出异常
       report_java_out_of_memory("Requested array size exceeds VM limit");
       JvmtiExport::post_array_size_exhausted();
       THROW_OOP_0(Universe::out_of_memory_error_array_size());
     }
   } else {
+    // 抛出异常
     THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
   }
 }

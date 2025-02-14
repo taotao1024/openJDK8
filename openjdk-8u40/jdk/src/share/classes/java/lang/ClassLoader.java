@@ -397,6 +397,8 @@ public abstract class ClassLoader {
             throws ClassNotFoundException {
         synchronized (getClassLoadingLock(name)) {
             // First, check if the class has already been loaded
+            // 首先从HotSpot VM缓存查找该类
+            // native 方法 通过JNI调用C++实现
             Class<?> c = findLoadedClass(name);
             if (c == null) {
                 long t0 = System.nanoTime();
@@ -405,7 +407,8 @@ public abstract class ClassLoader {
                         // 从父类加载
                         c = parent.loadClass(name, false);
                     } else {
-                        // 根加载器
+                        // 根（启动类、引导类）加载器
+                        // native 方法 通过JNI调用C++实现
                         c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
@@ -417,6 +420,7 @@ public abstract class ClassLoader {
                     // If still not found, then invoke findClass in order
                     // to find the class.
                     long t1 = System.nanoTime();
+                    // 当前类加载器尝试自己加载类
                     c = findClass(name);
 
                     // this is the defining class loader; record the stats
@@ -1008,7 +1012,13 @@ public abstract class ClassLoader {
         return findBootstrapClass(name);
     }
 
-    // return null if not found
+    /**
+     * return null if not found <p>
+     * {@link jdk/src/share/native/java/lang/ClassLoader.c} <p>
+     *
+     * @param name
+     * @return
+     */
     private native Class<?> findBootstrapClass(String name);
 
     /**
@@ -1020,10 +1030,10 @@ public abstract class ClassLoader {
      * @param  name
      *         The <a href="#name">binary name</a> of the class
      *
-     * @return  The <tt>Class</tt> object, or <tt>null</tt> if the class has
+     * @return The <tt>Class</tt> object, or <tt>null</tt> if the class has
      *          not been loaded
      *
-     * @since  1.1
+     * @since 1.1
      */
     protected final Class<?> findLoadedClass(String name) {
         if (!checkName(name))
@@ -1031,6 +1041,11 @@ public abstract class ClassLoader {
         return findLoadedClass0(name);
     }
 
+    /**
+     * {@link jdk/src/share/native/java/lang/ClassLoader.c}
+     * @param name
+     * @return
+     */
     private native final Class<?> findLoadedClass0(String name);
 
     /**
@@ -1370,6 +1385,8 @@ public abstract class ClassLoader {
     }
 
     /**
+     * 该方法由Hotspot虚拟器启动时，由JavaClass::call_static()调用Java静态方法的API的机制调用<p>
+     *
      * Returns the system class loader for delegation.  This is the default
      * delegation parent for new <tt>ClassLoader</tt> instances, and is
      * typically the class loader used to start the application.
@@ -1434,16 +1451,20 @@ public abstract class ClassLoader {
         if (sm != null) {
             checkClassLoaderPermission(scl, Reflection.getCallerClass());
         }
+        // 应用类加载器
         return scl;
     }
 
     private static synchronized void initSystemClassLoader() {
         if (!sclSet) {
-            if (scl != null)
+            if (scl != null) {
                 throw new IllegalStateException("recursive invocation");
+            }
+            // 获取Launcher对象
             sun.misc.Launcher l = sun.misc.Launcher.getLauncher();
             if (l != null) {
                 Throwable oops = null;
+                // 获取 应用类加载器AppClassLoader对象
                 scl = l.getClassLoader();
                 try {
                     scl = AccessController.doPrivileged(

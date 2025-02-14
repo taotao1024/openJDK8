@@ -263,7 +263,8 @@ Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jobject loader,
     if (!VerifyClassname(clname, JNI_TRUE)) {  /* expects slashed name */
         goto done;
     }
-
+    // openjdk/hotspot/src/share/vm/prims/jvm.cpp 中的
+    // JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env, const char* name))
     cls = JVM_FindClassFromBootLoader(env, clname);
 
  done:
@@ -281,6 +282,8 @@ Java_java_lang_ClassLoader_findLoadedClass0(JNIEnv *env, jobject loader,
     if (name == NULL) {
         return 0;
     } else {
+        // openjdk/hotspot/src/share/vm/prims/jvm.cpp 中的
+        // JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)) 方法
         return JVM_FindLoadedClass(env, loader, name);
     }
 }

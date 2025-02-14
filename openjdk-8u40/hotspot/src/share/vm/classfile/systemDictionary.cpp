@@ -87,7 +87,8 @@ Klass*      SystemDictionary::_well_known_klasses[SystemDictionary::WKID_LIMIT]
                                                           =  { NULL /*, NULL...*/ };
 
 Klass*      SystemDictionary::_box_klasses[T_VOID+1]      =  { NULL /*, NULL...*/ };
-
+// 用于保存应用类加载器实例
+// HotSpot VM在加载主类时会使用应用类加载器加载主类。
 oop         SystemDictionary::_java_system_loader         =  NULL;
 
 bool        SystemDictionary::_has_loadClassInternal      =  false;
@@ -103,16 +104,33 @@ Klass* volatile SystemDictionary::_abstract_ownable_synchronizer_klass = NULL;
 oop SystemDictionary::java_system_loader() {
   return _java_system_loader;
 }
-
+/**
+* 初始化 _java_system_loader
+* HotSpot VM可以通过_java_system_loader属性获取AppClassLoader对象，
+* 通过AppClassLoader对象中的parent属性获取ExtClassLoader对象。</p>
+* 其中</p>
+* AppClassLoader 为应用类加载器
+* ExtClassLoader 为扩展类加载器
+*/
 void SystemDictionary::compute_java_system_loader(TRAPS) {
   KlassHandle system_klass(THREAD, WK_KLASS(ClassLoader_klass));
   JavaValue result(T_OBJECT);
-  JavaCalls::call_static(&result,
-                         KlassHandle(THREAD, WK_KLASS(ClassLoader_klass)),
-                         vmSymbols::getSystemClassLoader_name(),
-                         vmSymbols::void_classloader_signature(),
-                         CHECK);
-
+  // 调用java.lang.ClassLoader类的getSystemClassLoader()方法
+  // ******************************************************************
+  // JavaClass::call_static()函数非常重要，它是HotSpot VM调用Java静态方法的API
+  // ******************************************************************
+  JavaCalls::call_static(
+      // 调用Java静态方法的返回值，并将其存储在result中
+      &result,
+      // 调用的目标类为java.lang.ClassLoader
+      KlassHandle(THREAD, WK_KLASS(ClassLoader_klass)),
+      // 调用目标类中的目标方法为getSystemClassLoader()
+      vmSymbols::getSystemClassLoader_name(),
+      // 调用目标方法的方法签名
+      vmSymbols::void_classloader_signature(),
+      CHECK);
+  // 获取调用getSystemClassLoader()方法的返回值并将其保存到_java_system_loader属性中
+  // 初始化属性为应用类加载器/AppClassLoader
   _java_system_loader = (oop)result.get_jobject();
 
   CDS_ONLY(SystemDictionaryShared::initialize(CHECK);)
@@ -905,6 +923,7 @@ Klass* SystemDictionary::find(Symbol* class_name,
   // UseNewReflection
   // The result of this call should be consistent with the result
   // of the call to resolve_instance_class_or_null().
+  // UseNewReflection 此调用的结果应与调用 resolve_instance_class_or_null（） 的结果一致。
   // See evaluation 6790209 and 4474172 for more details.
   class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader());
@@ -914,7 +933,9 @@ Klass* SystemDictionary::find(Symbol* class_name,
     // then the class loader has no entries in the dictionary.
     return NULL;
   }
-  // class_name + classLoader = hash
+  // class_name + classLoader = hash 使用hash算法当作Key
+  // 将已经加载的类存储到 Dictionary 中
+  // 只有类加载器和类才能确定唯一的表示Java类的Klass实例
   unsigned int d_hash = dictionary()->compute_hash(class_name, loader_data);
   int d_index = dictionary()->hash_to_index(d_hash);
 
@@ -926,6 +947,7 @@ Klass* SystemDictionary::find(Symbol* class_name,
     // Dictionary::do_unloading() asserts that classes in SD are only
     // unloaded at a safepoint. Anonymous classes are not in SD.
     No_Safepoint_Verifier nosafepoint;
+    // 查找 Dictionary::find
     return dictionary()->find(d_index, d_hash, class_name, loader_data,
                               protection_domain, THREAD);
   }
@@ -934,6 +956,7 @@ Klass* SystemDictionary::find(Symbol* class_name,
 
 // Look for a loaded instance or array klass by name.  Do not do any loading.
 // return NULL in case of error.
+// 查找InstanceKlass或ArrayKlass实例，不进行任何类加载操作。
 Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
                                                       Handle class_loader,
                                                       Handle protection_domain,
@@ -945,17 +968,23 @@ Klass* SystemDictionary::find_instance_or_array_klass(Symbol* class_name,
     // The name refers to an array.  Parse the name.
     // dimension and object_key in FieldArrayInfo are assigned as a
     // side-effect of this call
+    // 数组的查找逻辑
     FieldArrayInfo fd;
+    // 获取数组的元素类型
     BasicType t = FieldType::get_array_info(class_name, fd, CHECK_(NULL));
     if (t != T_OBJECT) {
+      // 元素类型为Java基本类型
       k = Universe::typeArrayKlassObj(t);
     } else {
+      // 元素类型为Java对象
       k = SystemDictionary::find(fd.object_key(), class_loader, protection_domain, THREAD);
     }
     if (k != NULL) {
+      // class_name表示的可能是多维数组，因此需要根据维度创建ObjArrayKlass实例
       k = k->array_klass_or_null(fd.dimension());
     }
   } else {
+    // 类的查找逻辑
     k = find(class_name, class_loader, protection_domain, THREAD);
   }
   return k;

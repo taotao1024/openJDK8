@@ -63,6 +63,7 @@
 
 class Handle VALUE_OBJ_CLASS_SPEC {
  private:
+  // 可以看到是对oop的封装
   oop* _handle;
 
  protected:
@@ -76,6 +77,7 @@ class Handle VALUE_OBJ_CLASS_SPEC {
   Handle(Thread* thread, oop obj);
 
   // General access
+  // Handle类重载了()和->运算符
   oop     operator () () const                   { return obj(); }
   oop     operator -> () const                   { return non_null_obj(); }
   bool    operator == (oop o) const              { return obj() == o; }
@@ -216,6 +218,7 @@ class instanceKlassHandle : public KlassHandle {
 
 //------------------------------------------------------------------------------------------------------------------------
 // Thread local handle area
+// 句柄都是在HandleArea中分配并存储的
 class HandleArea: public Arena {
   friend class HandleMark;
   friend class NoHandleMark;
@@ -224,6 +227,7 @@ class HandleArea: public Arena {
   int _handle_mark_nesting;
   int _no_handle_mark_nesting;
 #endif
+  // HandleArea通过_prev连接成单链表
   HandleArea* _prev;          // link to outer (older) area
  public:
   // Constructor
@@ -234,7 +238,10 @@ class HandleArea: public Arena {
   }
 
   // Handle allocation
+  // allocate_handle()函数为对象obj分配了一个新的句柄，代码如下
  private:
+   // 分配内存并存储obj对象
+   // real_allocate_handle()函数在HandleArea中分配内存并存储obj对象
   oop* real_allocate_handle(oop obj) {
 #ifdef ASSERT
     oop* handle = (oop*) (UseMallocOnly ? internal_malloc_4(oopSize) : Amalloc_4(oopSize));
@@ -285,14 +292,17 @@ class HandleArea: public Arena {
 
 class HandleMark {
  private:
+  // 拥有当前HandleMark实例的线程
   Thread *_thread;              // thread that owns this mark
   HandleArea *_area;            // saved handle area
+// Chunk和Area配合，获得准确的内存地址
   Chunk *_chunk;                // saved arena chunk
   char *_hwm, *_max;            // saved arena info
   size_t _size_in_bytes;        // size of handle area
   // Link to previous active HandleMark in thread
+  // 通过如下属性让HandleMark形成单链表
   HandleMark* _previous_handle_mark;
-
+  // 主要用于初始化一些属性。
   void initialize(Thread* thread);                // common code for constructors
   void set_previous_handle_mark(HandleMark* mark) { _previous_handle_mark = mark; }
   HandleMark* previous_handle_mark() const        { return _previous_handle_mark; }

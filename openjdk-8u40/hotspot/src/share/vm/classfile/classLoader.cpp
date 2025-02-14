@@ -1083,7 +1083,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
   const char* class_name = h_name->as_C_string();
   EventMark m("loading class %s", class_name);
   ThreadProfilerMark tpm(ThreadProfilerMark::classLoaderRegion);
-
+  // 获取文件名称
   stringStream st;
   // st.print() uses too much stack space while handling a StackOverflowError
   // st.print("%s.class", h_name->as_utf8());
@@ -1093,20 +1093,27 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
   ClassLoaderExt::Context context(class_name, file_name, THREAD);
 
   // Lookup stream for parsing .class file
+  // 根据文件名称查找Class文件
   ClassFileStream* stream = NULL;
   int classpath_index = 0;
+  // 因为ClassPath有多个，所以通过单链表结构将ClassPathEntry连接起来。
+  // 在ClassPathEntry类中还声明了一个虚函数 open_stream()
+  // 这样就可以循环遍历链表上的结构，直到查找到某个类路径下名称为name的Class文件为止
   ClassPathEntry* e = NULL;
   instanceKlassHandle h;
   {
     PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
                                ((JavaThread*) THREAD)->get_thread_stat()->perf_timers_addr(),
                                PerfClassTraceTime::CLASS_LOAD);
+    // // 从第一个ClassPathEntry开始遍历所有的ClassPathEntry
     e = _first_entry;
     while (e != NULL) {
+      // open_stream()函数会返回定义此类的Class文件的ClassFileStream实例。
       stream = e->open_stream(file_name, CHECK_NULL);
       if (!context.check(stream, classpath_index)) {
         return h; // NULL
       }
+      // 如果找到目标文件，则跳出循环
       if (stream != NULL) {
         break;
       }
@@ -1114,13 +1121,19 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
       ++classpath_index;
     }
   }
-
+  // 如果找到了目标Class文件，则加载并解析
   if (stream != NULL) {
     // class file found, parse it
     ClassFileParser parser(stream);
+    // 每个类加载器都对应一个ClassLoaderData实例
+    // 通过ClassLoaderData::the_null_class_loader_data()函数获取引导类加载器对应的ClassLoaderData实例。
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     Handle protection_domain;
     TempNewSymbol parsed_name = NULL;
+    // 加载并解析Class文件，注意此时并未开始连接
+    // parseClassFile 函数首先解析Class文件中的 类、字段和常量池等信息，然后将其转换为C++内部的对等表示形式。如：
+    // 将类元信息存储在InstanceKlass实例中，
+    // 将常量池信息存储在ConstantPool实例中。
     instanceKlassHandle result = parser.parseClassFile(h_name,
                                                        loader_data,
                                                        protection_domain,
@@ -1134,6 +1147,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
       }
       return h;
     }
+    // 记录被加载的类 避免重复加载
     h = context.record_result(classpath_index, e, result, THREAD);
   } else {
     if (DumpSharedSpaces) {

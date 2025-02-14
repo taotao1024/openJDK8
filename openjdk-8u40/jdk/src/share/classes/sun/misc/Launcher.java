@@ -25,35 +25,40 @@
 
 package sun.misc;
 
+import sun.net.www.ParseUtil;
+import sun.security.util.SecurityConstants;
+
 import java.io.File;
-import java.io.IOException;
 import java.io.FilePermission;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.MalformedURLException;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
-import java.util.HashSet;
-import java.util.StringTokenizer;
-import java.util.Set;
-import java.util.Vector;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.Permissions;
-import java.security.Permission;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
-import java.security.CodeSource;
-import sun.security.util.SecurityConstants;
-import sun.net.www.ParseUtil;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 /**
- * This class is used by the system to launch the main application.
-Launcher */
+ * This class is used by the system to launch the main application.Launcher
+ * HotSpot VM在启动的过程中会在 <JAVA_HOME>/lib/rt.jar包里的sun.misc.Launcher类
+ * 中完成扩展类加载器和应用类加载器的实例化，并会调用C++语言编写的ClassLoader类的initialize()
+ * 函数完成应用类加载器的初始化。
+ */
 public class Launcher {
     private static URLStreamHandlerFactory factory = new Factory();
+    // 饿加载
     private static Launcher launcher = new Launcher();
     private static String bootClassPath =
         System.getProperty("sun.boot.class.path");
@@ -66,6 +71,7 @@ public class Launcher {
 
     public Launcher() {
         // Create the extension class loader
+        // 首先创建扩展类加载器
         ClassLoader extcl;
         try {
             // 扩展类加载器
@@ -76,8 +82,11 @@ public class Launcher {
         }
 
         // Now create the class loader to use to launch the application
+        // 以ExtClassloader为父加载器创建AppClassLoader
         try {
             // 应用类加载器
+            // 与父加载器并非继承关系 用于Java类加载时的双亲委派
+            // 用户自定义的无参类加载器的父类加载器默认是AppClassLoader类加载器
             loader = AppClassLoader.getAppClassLoader(extcl);
         } catch (IOException e) {
             throw new InternalError(
@@ -85,7 +94,8 @@ public class Launcher {
         }
 
         // Also set the context class loader for the primordial thread.
-        // 此外，为 primordial thread 设置 context class loader。
+        // 设置默认线程上下文加载器为AppClassloader
+        // API机制在加载类时 直接使用AppClassLoader 打破了双拼委派的流程
         Thread.currentThread().setContextClassLoader(loader);
 
         // Finally, install a security manager if requested
@@ -125,6 +135,7 @@ public class Launcher {
     static class ExtClassLoader extends URLClassLoader {
 
         static {
+            // 注册为并行功能 JDK8新支持的
             ClassLoader.registerAsParallelCapable();
         }
 
@@ -134,6 +145,7 @@ public class Launcher {
          */
         public static ExtClassLoader getExtClassLoader() throws IOException
         {
+            // 获取加载类的加载路径
             final File[] dirs = getExtDirs();
 
             try {
@@ -148,6 +160,7 @@ public class Launcher {
                             for (int i = 0; i < len; i++) {
                                 MetaIndex.registerDirectory(dirs[i]);
                             }
+                            // 实例化扩展类加载器
                             return new ExtClassLoader(dirs);
                         }
                     });
@@ -162,14 +175,27 @@ public class Launcher {
 
         /*
          * Creates a new ExtClassLoader for the specified directories.
+         * 构造函数
          */
         public ExtClassLoader(File[] dirs) throws IOException {
-            // 扩展类加载器 父类为null
+            /*
+                在ExtClassLoader类的构造函数中调用父类的构
+                造函数时，传递的第2个参数的值为null，这个值会赋
+                值给parent字段。当parent字段的值为null时，在
+                java.lang.ClassLoader类中实现的loadClass()方法
+                会调用findBootstrapClassOrNull()方法加载类，最
+                终会调用C++语言实现的ClassLoader类中的相关函数
+                加载类。
+             */
             super(getExtURLs(dirs), null, factory);
             SharedSecrets.getJavaNetAccess().
                 getURLClassPath(this).initLookupCache(this);
         }
 
+        /**
+         * 获取加载类的加载路径
+         * @return
+         */
         private static File[] getExtDirs() {
             String s = System.getProperty("java.ext.dirs");
             File[] dirs;
@@ -286,6 +312,7 @@ public class Launcher {
                     public AppClassLoader run() {
                     URL[] urls =
                         (s == null) ? new URL[0] : pathToURLs(path);
+                    // parent通常是ExtClassLoader对象
                     return new AppClassLoader(urls, extcl);
                 }
             });
@@ -295,11 +322,13 @@ public class Launcher {
 
         /**
          * Creates a new AppClassLoader
+         * 构造函数
          *
          * @param urls   加载路径:java.class.path
          * @param parent 扩展类加载器
          */
         AppClassLoader(URL[] urls, ClassLoader parent) {
+            // parent通常是ExtClassLoader对象
             super(urls, parent, factory);
             ucp = SharedSecrets.getJavaNetAccess().getURLClassPath(this);
             ucp.initLookupCache(this);
@@ -307,6 +336,8 @@ public class Launcher {
 
         /**
          * Override loadClass so we can checkPackageAccess.
+         * 覆盖 loadClass，以便我们可以检查包访问
+         * 类加载-双拼委派
          */
         public Class<?> loadClass(String name, boolean resolve)
             throws ClassNotFoundException
@@ -318,13 +349,17 @@ public class Launcher {
                     sm.checkPackageAccess(name.substring(0, i));
                 }
             }
-
+            // 已知这个类存在
             if (ucp.knownToNotExist(name)) {
                 // The class of the given name is not found in the parent
                 // class loader as well as its local URLClassPath.
                 // Check if this class has already been defined dynamically;
                 // if so, return the loaded class; otherwise, skip the parent
                 // delegation and findClass.
+
+                // 在父类加载器及其本地 URLClassPath 中找不到给定名称的类。检查是否已动态定义此类;
+                // 如果是这样，则返回 loaded 类;否则，请跳过父委托和 findClass。
+                // native方法 从HotSpot_VM缓存查找该类
                 Class<?> c = findLoadedClass(name);
                 if (c != null) {
                     if (resolve) {
@@ -332,9 +367,10 @@ public class Launcher {
                     }
                     return c;
                 }
+                // 无法加载
                 throw new ClassNotFoundException(name);
             }
-
+            // 委派父类加载
             return (super.loadClass(name, resolve));
         }
 

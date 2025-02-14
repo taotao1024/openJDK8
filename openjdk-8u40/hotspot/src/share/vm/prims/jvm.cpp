@@ -1060,36 +1060,43 @@ JVM_ENTRY(jclass, JVM_DefineClassWithSourceCond(JNIEnv *env, const char *name,
 
   return jvm_define_class_common(env, name, loader, buf, len, pd, source, verify, THREAD);
 JVM_END
-
+/**
+* JVM_ENTRY是宏定义，用于处理JNI函数调用的预处理，如获取当前线程的Java-Thread指针。
+*/
 JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name))
   JVMWrapper("JVM_FindLoadedClass");
   ResourceMark rm(THREAD);
 
   Handle h_name (THREAD, JNIHandles::resolve_non_null(name));
+  // 获取类名对应的Handle
   Handle string = java_lang_String::internalize_classname(h_name, CHECK_NULL);
 
   const char* str   = java_lang_String::as_utf8_string(string());
   // Sanity check, don't expect null
+  // 检查类名是否为空
   if (str == NULL) return NULL;
 
   const int str_len = (int)strlen(str);
+  // 判断类名是否过长
   if (str_len > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
     return NULL;
   }
+  // 创建一个临时的Symbol实例
   TempNewSymbol klass_name = SymbolTable::new_symbol(str, str_len, CHECK_NULL);
 
   // Security Note:
   //   The Java level wrapper will perform the necessary security check allowing
   //   us to pass the NULL as the initiating class loader.
+  // 获取类加载器对应的Handle
   Handle h_loader(THREAD, JNIHandles::resolve(loader));
   if (UsePerfData) {
     is_lock_held_by_thread(h_loader,
                            ClassLoader::sync_JVMFindLoadedClassLockFreeCounter(),
                            THREAD);
   }
-
+  // 查找目标类是否存在
   Klass* k = SystemDictionary::find_instance_or_array_klass(klass_name,
                                                               h_loader,
                                                               Handle(),
@@ -1103,6 +1110,10 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
     k = ik();
   }
 #endif
+// 将Klass实例转换成java.lang.Class对象
+// 因为垃圾回收等原因，JNI函数不能直接访问Klass和oop实例，
+// 只能借助jobject和jclass等来访问，所以会调用JNIHandles::resolve_non_null()、
+// JNIHandles::resolve()与JNIHandles::mark_local()等函数进行转换。
   return (k == NULL) ? NULL :
             (jclass) JNIHandles::make_local(env, k->java_mirror());
 JVM_END

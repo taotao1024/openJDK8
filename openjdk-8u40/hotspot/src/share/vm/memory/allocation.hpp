@@ -319,7 +319,9 @@ class Chunk: CHeapObj<mtChunk> {
   friend class VMStructs;
 
  protected:
+  // 单链表的下一个Chunk
   Chunk*       _next;     // Next Chunk in list
+  // 当前Chunk的大小
   const size_t _len;      // Size of this Chunk
  public:
   void* operator new(size_t size, AllocFailType alloc_failmode, size_t length) throw();
@@ -372,9 +374,11 @@ protected:
   friend class VMStructs;
 
   MEMFLAGS    _flags;           // Memory tracking flags
-
+  // 单链表的第一个Chunk
   Chunk *_first;                // First chunk
+  // 当前正在使用的Chunk
   Chunk *_chunk;                // current chunk
+  // _hwm与_max指示当前可分配内存的Chunk的一些分配信息。
   char *_hwm, *_max;            // High water mark and max in current chunk
   // Get a new Chunk of at least size x
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
@@ -438,7 +442,11 @@ protected:
     if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode))
       return NULL;
     NOT_PRODUCT(inc_bytes_allocated(x);)
+    // Amalloc_4()函数会在当前的Chunk块中分配内存。
+    // 如果当前块的内存不够，则调用grow()方法分配新的Chunk块，然后在新的Chunk块中分配内存。
+    // _hwm与_max指示当前可分配内存的Chunk的一些分配信息。
     if (_hwm + x > _max) {
+      // 分配新的Chunk块，在新的Chunk块中分配内存
       return grow(x, alloc_failmode);
     } else {
       char *old = _hwm;
