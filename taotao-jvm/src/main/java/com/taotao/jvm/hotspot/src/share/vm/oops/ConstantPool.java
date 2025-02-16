@@ -20,7 +20,6 @@ public class ConstantPool {
     public static final int JVM_CONSTANT_Methodref = 10;
     public static final int JVM_CONSTANT_InterfaceMethodref = 11;
     public static final int JVM_CONSTANT_NameAndType = 12;
-    // lamdba表达式
     public static final int JVM_CONSTANT_MethodHandle = 15; /* JSR 292 */
     public static final int JVM_CONSTANT_MethodType = 16;   /* JSR 292 */
     public static final int JVM_CONSTANT_InvokeDynamic = 18;    /* JSR 292 */
@@ -104,6 +103,7 @@ public class ConstantPool {
         int i = data & 0xFF;
 
         int nameAndType = (int) getDataMap().get(i);
+        // 2字节 变 4字节
         i = nameAndType >> 16;
 
         return (String) getDataMap().get(i);
@@ -131,5 +131,55 @@ public class ConstantPool {
         i = data & 0xFF;
 
         return (String) getDataMap().get(i);
+    }
+
+    public int getBootMethodIndexByDynamicInfo(int operand) {
+        int data = (int) getDataMap().get(operand);
+        return data >> 16;
+    }
+
+    public String getMethodNameByDynamicInfo(int operand) {
+        // 获取Methodinfo在常量池中的index
+        int i = (int) getDataMap().get(operand);
+        int nameAndTypeIndex = i & 0xff;
+
+        // 获取NameAndType的值
+        int data = (int) getDataMap().get(nameAndTypeIndex);
+        i = data >> 16;
+
+        return (String) getDataMap().get(i);
+    }
+
+    public String getDescriptorNameByDynamicInfo(int operand) {
+        // 获取Methodinfo在常量池中的index
+        int i = (int) getDataMap().get(operand);
+        int nameAndTypeIndex = i & 0xff;
+
+        // 获取NameAndType的值
+        int data = (int) getDataMap().get(nameAndTypeIndex);
+        i = data & 0xFF;
+
+        return (String) getDataMap().get(i);
+    }
+
+    public String getClassNameByMethodHandleInfo(int operand) {
+        int i = (int) getDataMap().get(operand);
+        int methodrefInfoIndex = i & 0xFF;
+
+        return getClassNameByMethodInfo(methodrefInfoIndex);
+    }
+
+    public String getMethodNameByMethodHandleInfo(int operand) {
+        int i = (int) getDataMap().get(operand);
+        int methodrefInfoIndex = i & 0xFF;
+
+        return getMethodNameByMethodInfo(methodrefInfoIndex);
+    }
+
+    public String getDescriptorNameByMethodHandleInfo(int operand) {
+        int i = (int) getDataMap().get(operand);
+        int methodrefInfoIndex = i & 0xFF;
+
+        return getDescriptorNameByMethodInfo(methodrefInfoIndex);
     }
 }

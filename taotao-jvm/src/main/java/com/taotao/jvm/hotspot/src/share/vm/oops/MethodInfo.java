@@ -1,5 +1,6 @@
 package com.taotao.jvm.hotspot.src.share.vm.oops;
 
+import com.taotao.jvm.hotspot.src.share.vm.classfile.DescriptorStream2;
 import com.taotao.jvm.hotspot.src.share.vm.utilities.AccessFlags;
 import lombok.Data;
 
@@ -17,6 +18,7 @@ public class MethodInfo {
     private CodeAttributeInfo[] attributes;
 
     private String methodName;
+    private DescriptorStream2 descriptor;
 
     public void initAttributeContainer() {
         attributes = new CodeAttributeInfo[attributesCount];

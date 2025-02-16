@@ -21,7 +21,7 @@ public class BootClassLoader {
      * <p>
      * 注意路径后面的斜杠不可丢
      */
-    private static String searchPath = "D:\\002.code\\taotao1024\\openJDK8\\taotao-jvm\\target\\classes\\";
+    private static String searchPath = "D:\\006.work-java\\taotao1024\\openJDK8\\taotao-jvm\\target\\classes\\";
 
     /**
      * 用于存储该类加载器加载的所有类

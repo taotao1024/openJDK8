@@ -25,4 +25,8 @@ public class CodeAttributeInfo {
 
     private Map<String, AttributeInfo> attributes = new HashMap<>();
 
+    @Override
+    public String toString() {
+        return "CodeAttributeInfo{}";
+    }
 }
