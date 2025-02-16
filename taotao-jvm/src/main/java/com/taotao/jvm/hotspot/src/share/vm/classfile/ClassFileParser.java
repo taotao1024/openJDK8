@@ -115,13 +115,193 @@ public class ClassFileParser {
 
             String attrName = (String) klass.getConstantPool().getDataMap().get(DataTranslate.byteToUnsignedShort(u2Arr));
             if (attrName.equals("SourceFile")) {
-                index = parseSourceFile(content, index, klass);
+                index = parseSourceFile(content, index, klass, attrName);
+            } else if (attrName.equals("RuntimeInvisibleAnnotations")) {
+                index = parseRuntimeInvisibleAnnotations(content, index, klass, attrName);
+            } else if (attrName.equals("RuntimeVisibleAnnotations")) {
+                index = parseRuntimeVisibleAnnotations(content, index, klass, attrName);
+            } else if (attrName.equals("InnerClasses")) {
+                index = parseInnerClasses(content, index, klass, attrName);
+            } else if (attrName.equals("BootstrapMethods")) {
+                index = parseBootstrapMethods(content, index, klass, attrName);
             } else {
                 throw new Error("无法识别的类属性: " + attrName);
             }
         }
 
         return klass;
+    }
+
+    private static int parseBootstrapMethods(byte[] content, int index, InstanceKlass klass, String attrName) {
+        byte[] u2Arr = new byte[2];
+        byte[] u4Arr = new byte[4];
+
+        BootstrapMethods bootstrapMethods = new BootstrapMethods();
+        klass.getAttributeInfos().put(attrName, bootstrapMethods);
+
+        // name index
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        bootstrapMethods.setAttrNameIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+        bootstrapMethods.setAttrName((String) klass.getConstantPool().getDataMap().get(bootstrapMethods.getAttrNameIndex()));
+
+        // length
+        Stream.readU4Simple(content, index, u4Arr);
+        index += 4;
+
+        bootstrapMethods.setAttrLength(DataTranslate.byteArrayToInt(u4Arr));
+
+        // inner classes num
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        bootstrapMethods.setNumBootstrapMethods(DataTranslate.byteToUnsignedShort(u2Arr));
+
+        logger.info("\t 第 " + klass.getAttributeInfos().size() + " 个属性: " +
+                "name: " + bootstrapMethods.getAttrName()
+                + ", num: " + bootstrapMethods.getNumBootstrapMethods());
+
+        for (int i = 0; i < bootstrapMethods.getNumBootstrapMethods(); i++) {
+            BootstrapMethods.Item item = bootstrapMethods.new Item();
+            bootstrapMethods.getBootstrapMethods().add(item);
+
+            // bootstrap method ref
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            item.setBootstrapMethodRef(DataTranslate.byteToUnsignedShort(u2Arr));
+
+            // num bootstrap arguments
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            item.setNumBootstrapArguments(DataTranslate.byteToUnsignedShort(u2Arr));
+            item.initContainter();
+
+            // bootstrap arguments
+            for (int j = 0; j < item.getNumBootstrapArguments(); j++) {
+                Stream.readU2Simple(content, index, u2Arr);
+                index += 2;
+
+                item.getBootstrapArguments()[j] = DataTranslate.byteToUnsignedShort(u2Arr);
+            }
+        }
+
+        return index;
+    }
+
+
+    private static int parseRuntimeVisibleAnnotations(byte[] content, int index, InstanceKlass klass, String attrName) {
+        byte[] u2Arr = new byte[2];
+        byte[] u4Arr = new byte[4];
+
+        RuntimeVisibleAnnotations attributeInfo = new RuntimeVisibleAnnotations();
+        klass.getAttributeInfos().put(attrName, attributeInfo);
+
+        // name index
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        attributeInfo.setAttrNameIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+        attributeInfo.setAttrName((String) klass.getConstantPool().getDataMap().get(attributeInfo.getAttrNameIndex()));
+
+        // length
+        Stream.readU4Simple(content, index, u4Arr);
+        index += 4;
+
+        attributeInfo.setAttrLength(DataTranslate.byteArrayToInt(u4Arr));
+
+        // annotations num
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        attributeInfo.setAnnotationsNum(DataTranslate.byteToUnsignedShort(u2Arr));
+
+        // annotations
+        for (int i = 0; i < attributeInfo.getAnnotationsNum(); i++) {
+            Annotation annotation = new Annotation();
+            attributeInfo.getAnnotations().add(annotation);
+
+            // type index
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            annotation.setTypeIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+            annotation.setTypeStr((String) klass.getConstantPool().getDataMap().get(annotation.getTypeIndex()));
+
+            // elements num
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            annotation.setElementsNum(DataTranslate.byteToUnsignedShort(u2Arr));
+
+            if (0 != annotation.getElementsNum()) {
+                throw new Error("未做处理");
+            }
+
+            logger.info("\t 属性: " + attributeInfo.getAttrName()
+                    + ", name: " + annotation.getTypeStr()
+                    + ", length: " + annotation.getElementsNum());
+        }
+
+        return index;
+    }
+
+    private static int parseRuntimeInvisibleAnnotations(byte[] content, int index, InstanceKlass klass, String attrName) {
+        byte[] u2Arr = new byte[2];
+        byte[] u4Arr = new byte[4];
+
+        RuntimeInvisibleAnnotations attributeInfo = new RuntimeInvisibleAnnotations();
+        klass.getAttributeInfos().put(attrName, attributeInfo);
+
+        // name index
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        attributeInfo.setAttrNameIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+        attributeInfo.setAttrName((String) klass.getConstantPool().getDataMap().get(attributeInfo.getAttrNameIndex()));
+
+        // length
+        Stream.readU4Simple(content, index, u4Arr);
+        index += 4;
+
+        attributeInfo.setAttrLength(DataTranslate.byteArrayToInt(u4Arr));
+
+        // annotations num
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        attributeInfo.setAnnotationsNum(DataTranslate.byteToUnsignedShort(u2Arr));
+
+        // annotations
+        for (int i = 0; i < attributeInfo.getAnnotationsNum(); i++) {
+            Annotation annotation = new Annotation();
+            attributeInfo.getAnnotations().add(annotation);
+
+            // type index
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            annotation.setTypeIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+            annotation.setTypeStr((String) klass.getConstantPool().getDataMap().get(annotation.getTypeIndex()));
+
+            // elements num
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            annotation.setElementsNum(DataTranslate.byteToUnsignedShort(u2Arr));
+
+            if (0 != annotation.getElementsNum()) {
+                throw new Error("未做处理");
+            }
+
+            logger.info("\t 第 " + attributeInfo.getAnnotations().size() + " 个属性: " + attributeInfo.getAttrName()
+                    + ", name: " + annotation.getTypeStr()
+                    + ", length: " + annotation.getElementsNum());
+        }
+
+        return index;
     }
 
     private static int parseInterface(byte[] content, InstanceKlass klass, int index) {
@@ -143,13 +323,13 @@ public class ClassFileParser {
         return index;
     }
 
-    private static int parseSourceFile(byte[] content, int index, InstanceKlass klass) {
+    private static int parseSourceFile(byte[] content, int index, InstanceKlass klass, String attrName) {
         byte[] u2Arr = new byte[2];
         byte[] u4Arr = new byte[4];
 
         AttributeInfo attributeInfo = new AttributeInfo();
 
-        klass.getAttributeInfos().add(attributeInfo);
+        klass.getAttributeInfos().put(attrName, attributeInfo);
 
         // name index
         Stream.readU2Simple(content, index, u2Arr);
@@ -210,6 +390,12 @@ public class ClassFileParser {
             index += 2;
 
             methodInfo.setDescriptorIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+
+            // 解析出参数个数、参数类型、返回值类型
+            DescriptorStream2 stream = new DescriptorStream2((String) methodInfo.getBelongKlass().getConstantPool().getDataMap().get(methodInfo.getDescriptorIndex()));
+            stream.parseMethod();
+
+            methodInfo.setDescriptor(stream);
 
             // attribute count
             Stream.readU2Simple(content, index, u2Arr);
@@ -300,6 +486,8 @@ public class ClassFileParser {
                         index = parseLineNumberTable(content, index, attrName, attributeInfo);
                     } else if (attrName.equals("LocalVariableTable")) {
                         index = parseLocalVariableTable(content, index, attrName, attributeInfo);
+                    } else if (attrName.equals("StackMapTable")) {
+                        index = parseStackMapTable(content, index, attrName, attributeInfo);
                     }
                 }
             }
@@ -313,6 +501,40 @@ public class ClassFileParser {
                 BootClassLoader.setMainKlass(klass);
             }
         }
+
+        return index;
+    }
+
+    private static int parseStackMapTable(byte[] content,
+                                          int index,
+                                          String attrName,
+                                          CodeAttributeInfo attributeInfo) {
+        byte[] u2Arr = new byte[2];
+        byte[] u4Arr = new byte[4];
+
+        StackMapTable stackMapTable = new StackMapTable();
+
+        attributeInfo.getAttributes().put(attrName, stackMapTable);
+
+        // attr name index
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        stackMapTable.setAttrNameIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+
+        // attr len
+        Stream.readU4Simple(content, index, u4Arr);
+        index += 4;
+
+        stackMapTable.setAttrLength(DataTranslate.byteArrayToInt(u4Arr));
+
+        // 跳过后面的后面
+        index += stackMapTable.getAttrLength();
+
+        logger.info("\t\t\t stackMapTable: "
+                + ", name index: " + stackMapTable.getAttrNameIndex()
+                + ", attr len: " + stackMapTable.getAttrLength()
+        );
 
         return index;
     }
@@ -554,11 +776,12 @@ public class ClassFileParser {
 
                     break;
                 }
-                case ConstantPool.JVM_CONSTANT_Integer:
+                case ConstantPool.JVM_CONSTANT_Integer: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_Integer;
 
                     throw new Error("程序未做处理");
-                case ConstantPool.JVM_CONSTANT_Float:
+                }
+                case ConstantPool.JVM_CONSTANT_Float: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_Float;
 
                     Stream.readU4Simple(content, index, u4Arr);
@@ -566,14 +789,33 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, DataTranslate.byteToFloat(u4Arr));
 
-                    logger.info("\t第 " + i+ " 个: 类型: Float，值: " + klass.getConstantPool().getDataMap().get(i));
+                    logger.info("\t第 " + i + " 个: 类型: Float，值: " + klass.getConstantPool().getDataMap().get(i));
 
                     break;
-                case ConstantPool.JVM_CONSTANT_Long:
+                }
+                case ConstantPool.JVM_CONSTANT_Long: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_Long;
 
-                    throw new Error("程序未做处理");
-                case ConstantPool.JVM_CONSTANT_Double:
+                    Stream.readU8Simple(content, index, u8Arr);
+                    index += 8;
+
+                    klass.getConstantPool().getDataMap().put(i, DataTranslate.bytesToLong(u8Arr));
+
+                    logger.info("\t第 " + i + " 个: 类型: Long，值: " + klass.getConstantPool().getDataMap().get(i));
+
+                    /**
+                     *  因为一个long在常量池中需要两个成员项目来存储
+                     *  所以需要处理
+                     */
+                    klass.getConstantPool().getTag()[++i] = ConstantPool.JVM_CONSTANT_Long;
+
+                    klass.getConstantPool().getDataMap().put(i, DataTranslate.bytesToLong(u8Arr));
+
+                    logger.info("\t第 " + i + " 个: 类型: Long，值: " + klass.getConstantPool().getDataMap().get(i));
+
+                    break;
+                }
+                case ConstantPool.JVM_CONSTANT_Double: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_Double;
 
                     Stream.readU8Simple(content, index, u8Arr);
@@ -581,7 +823,7 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, DataTranslate.bytesToDouble(u8Arr, false));
 
-                    logger.info("\t第 " + i+ " 个: 类型: Double，值: " + klass.getConstantPool().getDataMap().get(i));
+                    logger.info("\t第 " + i + " 个: 类型: Double，值: " + klass.getConstantPool().getDataMap().get(i));
 
                     /**
                      *  因为一个double在常量池中需要两个成员项目来存储
@@ -591,9 +833,10 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, DataTranslate.bytesToDouble(u8Arr, false));
 
-                    logger.info("\t第 " + i+ " 个: 类型: Double，值: " + klass.getConstantPool().getDataMap().get(i));
+                    logger.info("\t第 " + i + " 个: 类型: Double，值: " + klass.getConstantPool().getDataMap().get(i));
 
                     break;
+                }
                 case ConstantPool.JVM_CONSTANT_Class: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_Class;
 
@@ -606,7 +849,7 @@ public class ClassFileParser {
 
                     break;
                 }
-                case ConstantPool.JVM_CONSTANT_String:
+                case ConstantPool.JVM_CONSTANT_String: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_String;
 
                     // Utf8_info
@@ -615,9 +858,10 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, DataTranslate.byteToUnsignedShort(u2Arr));
 
-                    logger.info("\t第 " + i+ " 个: 类型: String，值无法获取，因为字符串的内容还未解析到");
+                    logger.info("\t第 " + i + " 个: 类型: String，值无法获取，因为字符串的内容还未解析到");
 
                     break;
+                }
                 case ConstantPool.JVM_CONSTANT_Fieldref: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_Fieldref;
 
@@ -661,7 +905,7 @@ public class ClassFileParser {
 
                     break;
                 }
-                case ConstantPool.JVM_CONSTANT_InterfaceMethodref:
+                case ConstantPool.JVM_CONSTANT_InterfaceMethodref: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_InterfaceMethodref;
 
                     // Class_info
@@ -679,9 +923,10 @@ public class ClassFileParser {
                     // 将classIndex与nameAndTypeIndex拼成一个，前十六位是classIndex，后十六位是nameAndTypeIndex
                     klass.getConstantPool().getDataMap().put(i, classIndex << 16 | nameAndTypeIndex);
 
-                    logger.info("\t第 " + i+ " 个: 类型: InterfaceMethodref，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
+                    logger.info("\t第 " + i + " 个: 类型: InterfaceMethodref，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
 
                     break;
+                }
                 case ConstantPool.JVM_CONSTANT_NameAndType: {
                     klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_NameAndType;
 
@@ -703,9 +948,129 @@ public class ClassFileParser {
 
                     break;
                 }
+                case ConstantPool.JVM_CONSTANT_MethodHandle: {
+                    klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_InvokeDynamic;
+
+                    // reference kind
+                    byte referenceKind = Stream.readU1Simple(content, index);
+                    index += 1;
+
+                    // reference index
+                    Stream.readU2Simple(content, index, u2Arr);
+                    index += 2;
+
+                    int referenceIndex = DataTranslate.byteToUnsignedShort(u2Arr);
+
+                    klass.getConstantPool().getDataMap().put(i, referenceKind << 16 | referenceIndex);
+
+                    logger.info("\t第 " + i+ " 个: 类型: MethodHandle，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
+
+                    break;
+                }
+                case ConstantPool.JVM_CONSTANT_MethodType: {
+                    klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_String;
+
+                    // descriptor index
+                    Stream.readU2Simple(content, index, u2Arr);
+                    index += 2;
+
+                    klass.getConstantPool().getDataMap().put(i, DataTranslate.byteToUnsignedShort(u2Arr));
+
+                    logger.info("\t第 " + i+ " 个: 类型: MethodType，值: " + klass.getConstantPool().getDataMap().get(i));
+
+                    break;
+                }
+                case ConstantPool.JVM_CONSTANT_InvokeDynamic: {
+                    klass.getConstantPool().getTag()[i] = ConstantPool.JVM_CONSTANT_InvokeDynamic;
+
+                    // bootstrap method attr
+                    Stream.readU2Simple(content, index, u2Arr);
+                    index += 2;
+
+                    int bootstrapMethodAttrIndex = DataTranslate.byteToUnsignedShort(u2Arr);
+
+                    // 方法描述符
+                    Stream.readU2Simple(content, index, u2Arr);
+                    index += 2;
+
+                    int methodDescriptorIndex = DataTranslate.byteToUnsignedShort(u2Arr);
+
+                    klass.getConstantPool().getDataMap().put(i, bootstrapMethodAttrIndex << 16 | methodDescriptorIndex);
+
+                    logger.info("\t第 " + i+ " 个: 类型: InvokeDynamic，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
+
+                    break;
+                }
                 default:
                     throw new Error("无法识别的常量池项");
             }
+        }
+
+        return index;
+    }
+
+    private static int parseInnerClasses(byte[] content, int index, InstanceKlass klass, String attrName) {
+        byte[] u2Arr = new byte[2];
+        byte[] u4Arr = new byte[4];
+
+        InnerClasses innerClasses = new InnerClasses();
+        klass.getAttributeInfos().put(attrName, innerClasses);
+
+        // name index
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        innerClasses.setAttrNameIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+        innerClasses.setAttrName((String) klass.getConstantPool().getDataMap().get(innerClasses.getAttrNameIndex()));
+
+        // length
+        Stream.readU4Simple(content, index, u4Arr);
+        index += 4;
+
+        innerClasses.setAttrLength(DataTranslate.byteArrayToInt(u4Arr));
+
+        // inner classes num
+        Stream.readU2Simple(content, index, u2Arr);
+        index += 2;
+
+        innerClasses.setNumOfClasses(DataTranslate.byteToUnsignedShort(u2Arr));
+
+        logger.info("\t 第 " + klass.getAttributeInfos().size() + " 个属性: " +
+                "name: " + innerClasses.getAttrName()
+                + ", classes num: " + innerClasses.getNumOfClasses());
+
+        for (int i = 0; i < innerClasses.getNumOfClasses(); i++) {
+            InnerClasses.Item item = innerClasses.new Item();
+            innerClasses.getClasses().add(item);
+
+            // inner class info index
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            item.setInterClassInfoIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+
+            // outer class info index
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            item.setOuterClassInfoIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+
+            // inner class index
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            item.setInnerNameIndex(DataTranslate.byteToUnsignedShort(u2Arr));
+
+            // access flags
+            Stream.readU2Simple(content, index, u2Arr);
+            index += 2;
+
+            item.setAccessFlags(new AccessFlags(DataTranslate.byteToUnsignedShort(u2Arr)));
+
+            logger.info("\t\t innter class index: " + item.getInterClassInfoIndex()
+                    + ", outer class index: " + item.getOuterClassInfoIndex()
+                    + ", inner name index: " + item.getInnerNameIndex()
+                    + ", access flag: " + item.getAccessFlags().getFlag());
         }
 
         return index;

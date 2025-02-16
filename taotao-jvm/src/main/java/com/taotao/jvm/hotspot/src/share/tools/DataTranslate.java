@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public class DataTranslate {
-
     private static final char[] HEX_CHAR = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
     public static String bytesToHexFun1(byte[] bytes) {
@@ -120,6 +119,12 @@ public class DataTranslate {
         return value;
     }
 
+    /**
+     * 测试OK
+     *
+     * @param b
+     * @return
+     */
     public static float byteToFloat(byte[] b) {
         int l;
 
@@ -132,6 +137,36 @@ public class DataTranslate {
         l |= ((long) b[0] << 24);
 
         return Float.intBitsToFloat(l);
+    }
+
+    public static float bytesToFloat(byte[] arr, boolean littleEndian) {
+        ByteBuffer buffer = ByteBuffer.wrap(arr, 0, 4);
+
+        if (littleEndian) {
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
+
+        return buffer.getFloat();
+    }
+
+    /**
+     * 测试OK
+     *
+     * @param f
+     * @return
+     */
+    public static byte[] floatToByte2(float f) {
+        byte[] ret = new byte[4];
+
+        //将float里面的二进制串解释为int整数
+        int i = Float.floatToIntBits(f);
+
+        ret[0] = (byte) ((i & 0xff000000) >> 24);
+        ret[1] = (byte) ((i & 0x00ff0000) >> 16);
+        ret[2] = (byte) ((i & 0x0000ff00) >> 8);
+        ret[3] = (byte) (i & 0x000000ff);
+
+        return ret;
     }
 
     public static byte[] floatToByte(float f) {
@@ -227,5 +262,17 @@ public class DataTranslate {
         return byteRet;
     }
 
+    public static byte[] longToBytes(long v) {
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.putLong(v);
+
+        return buffer.array();
+    }
+
+    public static long bytesToLong(byte[] arr) {
+        ByteBuffer buffer = ByteBuffer.wrap(arr, 0, 8);
+
+        return buffer.getLong();
+    }
 
 }

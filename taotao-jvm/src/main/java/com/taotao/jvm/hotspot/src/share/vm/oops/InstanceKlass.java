@@ -3,7 +3,9 @@ package com.taotao.jvm.hotspot.src.share.vm.oops;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class InstanceKlass extends Klass {
@@ -40,7 +42,7 @@ public class InstanceKlass extends Klass {
     private MethodInfo[] methods;
 
     private int attributeLength;
-    private List<AttributeInfo> attributeInfos = new ArrayList<>();
+    private Map<String, AttributeInfo> attributeInfos = new HashMap<>();
 
     public InstanceKlass() {
         constantPool = new ConstantPool();
