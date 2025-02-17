@@ -28,11 +28,11 @@ public class BytecodeInterpreter extends StackObj {
         // 得到字节码指令
         BytecodeStream code = method.getAttributes()[0].getCode();
 
-        // 得到栈帧
+        // 得到栈帧 查看此堆栈顶部的对象，而不将其从堆栈中删除。
         JavaVFrame frame = (JavaVFrame) thread.getStack().peek();
 
         int c;
-
+        // 汇编指令选择
         while (!code.end()) {
             c = code.getU1Code();
 
@@ -1498,7 +1498,7 @@ public class BytecodeInterpreter extends StackObj {
                 case Bytecodes.GETSTATIC: {
                     logger.info("执行指令: GETSTATIC");
 
-                    // 获取操作数
+                    // 获取操作数 直接连接
                     short operand = code.getUnsignedShort();
 
                     String className = method.getBelongKlass().getConstantPool().getClassNameByFieldInfo(operand);
@@ -1903,6 +1903,8 @@ public class BytecodeInterpreter extends StackObj {
                 }
             } /* end switch */
         } /* end while */
+        System.out.println(frame.getStack().getContainer().size());
+        System.out.println(frame.getLocals().getContainer().size());
     }
 
 }

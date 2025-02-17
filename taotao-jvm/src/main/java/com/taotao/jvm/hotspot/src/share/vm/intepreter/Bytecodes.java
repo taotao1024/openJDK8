@@ -163,8 +163,13 @@ public class Bytecodes {
     public static final int IRETURN = 172;      // 0xac
 
     public static final int ARETURN = 176;      // 0xb0
+    /**
+     * 退出
+     */
     public static final int RETURN = 177;       // 0xb1
-
+    /**
+     * 获取静态
+     */
     public static final int GETSTATIC = 178;    // 0xb2
     public static final int PUTSTATIC = 179;    // 0xb3
     public static final int GETFIELD = 180;     // 0xb4
@@ -172,6 +177,9 @@ public class Bytecodes {
 
     public static final int INVOKEVIRTUAL = 182;        // 0xb6
     public static final int INVOKESPECIAL = 183;        // 0xb7
+    /**
+     * 动态的生成与给定参数类型的对象，并且放入到操作数栈上。
+     */
     public static final int INVOKESTATIC = 184;         // 0xb8
     public static final int INVOKEINTERFACE = 185;      // 0xb9
     public static final int INVOKEDYNAMIC = 186;        // 0xba

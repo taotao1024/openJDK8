@@ -20,8 +20,10 @@ public class BootClassLoader {
      * 该类加载器的加载路径:多个路径以分号分隔
      * <p>
      * 注意路径后面的斜杠不可丢
+     * <p>
+     * 等同于 Thread.currentThread().getContextClassLoader().getResource("").toString()
      */
-    private static String searchPath = "D:\\006.work-java\\taotao1024\\openJDK8\\taotao-jvm\\target\\classes\\";
+    private static String searchPath = "D:/002.code/taotao1024/openJDK8/out/production/taotao-jvm/";
 
     /**
      * 用于存储该类加载器加载的所有类
