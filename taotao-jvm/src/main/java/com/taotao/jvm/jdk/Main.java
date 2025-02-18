@@ -14,11 +14,14 @@ public class Main {
     }
 
     public static void startJVM() {
+        String klass_1 = "com.taotao.jvm.example.HelloWorld";
+        String klass_2 = "com.taotao.jvm.example.lamdba.Lamdba";
+
         // 通过AppClassLoader加载main函数所在的类
-        InstanceKlass mainKlass = BootClassLoader.loadMainKlass("com.taotao.jvm.example.HelloWorld");
+        InstanceKlass mainKlass = BootClassLoader.loadMainKlass(klass_2);
 
         // 找到main方法
-        MethodInfo mainMethod = JavaNativeInterface.getMethodID(mainKlass,"main", "([Ljava/lang/String;)V");
+        MethodInfo mainMethod = JavaNativeInterface.getMethodID(mainKlass, "main", "([Ljava/lang/String;)V");
 
         // 创建线程
         JavaThread thread = new JavaThread();

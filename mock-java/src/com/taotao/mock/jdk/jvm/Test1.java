@@ -89,14 +89,14 @@ public class Test1 {
     char c = 11;
 
     /**
-     *  0 new #5 <com/luban/ziya/jvm/Test>
+     *  0 new #5 <com/taotao/jvm/Test>
      *      1、堆空间申请了内存（不完全对象）构造方法还未执行
      *      2、内存地址压入栈
      *  3 dup
      *      0、duplicate
      *      1、赋值栈顶元素
      *      2、再次压入栈
-     *  4 invokespecial #6 <com/luban/ziya/jvm/Test.<init> : ()V>
+     *  4 invokespecial #6 <com/taotao/jvm/Test.<init> : ()V>
      *      0、执行方法
      *      1、构架环境
      *          1、创建栈帧
@@ -109,11 +109,11 @@ public class Test1 {
      *      2、赋值给index=1的位置的变量（局部变量表）
      *  8 getstatic #7 <java/lang/System.out : Ljava/io/PrintStream;>
      * 11 aload_1
-     * 12 getfield #3 <com/luban/ziya/jvm/Test.a : B>
+     * 12 getfield #3 <com/taotao/jvm/Test.a : B>
      * 15 invokevirtual #8 <java/io/PrintStream.println : (I)V>
      * 18 getstatic #7 <java/lang/System.out : Ljava/io/PrintStream;>
      * 21 aload_1
-     * 22 invokevirtual #9 <com/luban/ziya/jvm/Test.add : ()I>
+     * 22 invokevirtual #9 <com/taotao/jvm/Test.add : ()I>
      * 25 invokevirtual #8 <java/io/PrintStream.println : (I)V>
      * 28 goto 28 (0)
      * @param args

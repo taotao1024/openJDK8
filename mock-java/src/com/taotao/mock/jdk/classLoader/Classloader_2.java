@@ -18,12 +18,12 @@ public class Classloader_2 extends ClassLoader {
 
     public static void main(String[] args) throws ClassNotFoundException {
         Classloader_2 classloader1 = new Classloader_2();
-        classloader1.setFilepath("/home/ziya/Documents/java-text/");
+        classloader1.setFilepath("/home/taotao/Documents/java-text/");
         Class<?> clazz1 = classloader1.loadClass("com.qimingnan.classloader.Classloader_1");
         System.out.println("clazz1 hashcode: " + clazz1.hashCode());
 
         Classloader_2 classloader2 = new Classloader_2();
-        classloader2.setFilepath("/home/ziya/Documents/java-text/");
+        classloader2.setFilepath("/home/taotao/Documents/java-text/");
         Class<?> clazz2 = classloader2.loadClass("com.qimingnan.classloader.Classloader_1");
         System.out.println("clazz2 hashcode: " + clazz2.hashCode());
     }

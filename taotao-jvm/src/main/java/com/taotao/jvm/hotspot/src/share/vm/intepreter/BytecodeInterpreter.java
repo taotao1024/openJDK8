@@ -1903,8 +1903,8 @@ public class BytecodeInterpreter extends StackObj {
                 }
             } /* end switch */
         } /* end while */
-        System.out.println(frame.getStack().getContainer().size());
-        System.out.println(frame.getLocals().getContainer().size());
+        logger.info("栈帧剩余Stack数量 {}", frame.getStack().getContainer().size());
+        logger.info("栈帧剩余Local数量 {}", frame.getLocals().getContainer().size());
     }
 
 }
