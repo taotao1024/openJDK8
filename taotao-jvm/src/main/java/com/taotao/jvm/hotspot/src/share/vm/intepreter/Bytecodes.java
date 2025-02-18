@@ -174,14 +174,34 @@ public class Bytecodes {
     public static final int PUTSTATIC = 179;    // 0xb3
     public static final int GETFIELD = 180;     // 0xb4
     public static final int PUTFIELD = 181;     // 0xb5
-
+    /**
+     * 用于调用对象的实例方法
+     * 根据对象的实际类型进行分派（虚方法分派)，这也是Java语言中最常见的方法分派方式
+     */
     public static final int INVOKEVIRTUAL = 182;        // 0xb6
+    /**
+     * 用于调用一些需要特殊处理的实例方法，
+     * 包括实例初始化方法、私有方法和父类方法
+     */
     public static final int INVOKESPECIAL = 183;        // 0xb7
     /**
-     * 动态的生成与给定参数类型的对象，并且放入到操作数栈上。
+     * 用于调用类方法(static方法)
      */
     public static final int INVOKESTATIC = 184;         // 0xb8
+    /**
+     * 用于调用接口方法，
+     * 它会在运行时搜索一个实现了这个接口方法的对象，找出适合的方法进行调用
+     */
     public static final int INVOKEINTERFACE = 185;      // 0xb9
+    /**
+     * 用于在运行时动态解析出调用点限定符所引用的方法，并执行该方法
+     * 前4条(182、183、184、185)调指令的分派逻辑都固化在Java虚拟机内部，
+     * 而invokedynamic指令的分派逻辑是由用户所设定的引导方法决定的。
+     * <p>
+     * Java8中，invokedynamic才开始使用，其中最简单的例子就是lambda表达式
+     * <p>
+     * <a href="https://juejin.cn/post/7202188318889508924">【JVM】字节码指令简介(四)-invokedynamic详解</a>
+     */
     public static final int INVOKEDYNAMIC = 186;        // 0xba
 
     public static final int NEW = 187;          // 0xbb
