@@ -488,6 +488,7 @@ public enum LauncherHelper {
                                             String what) {
         initOutput(printToStderr);
         // get the class name
+        // 获取类名称
         String cn = null;
         switch (mode) {
             case LM_CLASS:
@@ -503,6 +504,7 @@ public enum LauncherHelper {
         cn = cn.replace('/', '.');
         Class<?> mainClass = null;
         try {
+            // 根据类名称加载主类
             mainClass = scloader.loadClass(cn);
         } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
             if (System.getProperty("os.name", "").contains("OS X")

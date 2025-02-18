@@ -1307,6 +1307,7 @@ static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, 
 
   // Invoke the method. Result is returned as oop.
   // 供C/C++程序调用Java方法
+  // 执行 sun/launcher/LauncherHelper.java#checkAndLoadMain()方法
   JavaCalls::call(result, method, &java_args, CHECK);
 
   // Convert result
