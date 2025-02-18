@@ -486,11 +486,14 @@ InitLauncher(jboolean javaw)
  * class loader, refer to java.h
  */
 static FindClassFromBootLoader_t *findBootClass = NULL;
-
+/**
+* 参数classname的值为"sun/launcher/LauncherHelper"。
+*/
 jclass
 FindBootStrapClass(JNIEnv *env, const char* classname)
 {
    if (findBootClass == NULL) {
+       // 返回指向JVM_FindClassFromBootLoader()函数的函数指针
        findBootClass = (FindClassFromBootLoader_t *)dlsym(RTLD_DEFAULT,
           "JVM_FindClassFromBootLoader");
        if (findBootClass == NULL) {
@@ -499,6 +502,8 @@ FindBootStrapClass(JNIEnv *env, const char* classname)
            return NULL;
        }
    }
+    // 指针findBootClass来调用JVM_FindClassFromBootLoader()函数
+   // jvm.cpp::JVM_FindClassFromBootLoader()
    return findBootClass(env, classname);
 }
 

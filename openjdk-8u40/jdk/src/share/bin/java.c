@@ -1238,11 +1238,14 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
 }
 
 static jclass helperClass = NULL;
-
+/**
+* 加载sun.launcher.LauncherHelper类
+*/
 jclass
 GetLauncherHelperClass(JNIEnv *env)
 {
     if (helperClass == NULL) {
+        // java_md_common.c::FindBootStrapClass(JNIEnv *env, const char* classname)
         NULL_CHECK0(helperClass = FindBootStrapClass(env, "sun/launcher/LauncherHelper"));
     }
     return helperClass;
@@ -1317,18 +1320,25 @@ LoadMainClass(JNIEnv *env, int mode, char *name)
     jstring str;
     jobject result;
     jlong start, end;
+    // *** 重要函数 GetLauncherHelperClass ***
+    // 加载sun.launcher.LauncherHelper类
     jclass cls = GetLauncherHelperClass(env);
     NULL_CHECK0(cls);
     if (JLI_IsTraceLauncher()) {
         start = CounterGet();
     }
+    // *** 重要函数 GetStaticMethodID ***
+    // 通过JNI的方式调用Java方法时，首先要获取方法的methodID
     // 从C++ 调用到Java
-    // sun.launcher.LauncherHelper
+    // 获取 sun.launcher.LauncherHelper 类中定义的checkAndLoadMain()方法的指针
     NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
                 "checkAndLoadMain",
                 "(ZILjava/lang/String;)Ljava/lang/Class;"));
-
+    // 调用sun.launcher.LauncherHelper类中的checkAndLoadMain()方法
     str = NewPlatformString(env, name);
+    // *** 重要函数 CallStaticObjectMethod ***
+    // 执行sun.launcher.LauncherHelper类的checkAndLoadMain()方法
+    // CallStaticObjectMethod()函数会通过static void jni_invoke_static 函数执行checkAndLoadMain()方法
     CHECK_JNI_RETURN_0(
         result = (*env)->CallStaticObjectMethod(
             env, cls, mid, USE_STDERR, mode, str));

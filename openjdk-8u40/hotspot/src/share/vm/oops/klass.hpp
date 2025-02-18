@@ -488,6 +488,7 @@ protected:
   virtual Method* uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const;
  public:
   Method* lookup_method(Symbol* name, Symbol* signature) const {
+    // 很奇怪 为什么会跳转到 instanceKlass.cpp::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode)
     return uncached_lookup_method(name, signature, normal);
   }
 

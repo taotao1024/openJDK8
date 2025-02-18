@@ -2584,7 +2584,9 @@ Array<Method*>* ClassFileParser::parse_methods(bool is_interface,
   return _methods;
 }
 
-
+/**
+* 对数组排序
+*/
 intArray* ClassFileParser::sort_methods(Array<Method*>* methods) {
   int length = methods->length();
   // If JVMTI original method ordering or sharing is enabled we have to

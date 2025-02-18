@@ -195,6 +195,7 @@ bool SystemDictionary::is_ext_class_loader(Handle class_loader) {
 
 Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS) {
   Klass* klass = resolve_or_null(class_name, class_loader, protection_domain, THREAD);
+  // 如果之前已经产生了异常或klass为空，则抛出异常
   if (HAS_PENDING_EXCEPTION || klass == NULL) {
     KlassHandle k_h(THREAD, klass);
     // can return a null klass
@@ -1922,6 +1923,7 @@ void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id
     assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
     int info = wk_init_info[id - FIRST_WKID];
     int sid  = (info >> CEIL_LG_OPTION_LIMIT);
+    // right_n_bits的宏扩展为 ((CEIL_LG_OPTION_LIMIT >= BitsPerWord ? 0 : OneBit << (CEIL_LG_OPTION_LIMIT)) - 1)
     int opt  = (info & right_n_bits(CEIL_LG_OPTION_LIMIT));
 
     initialize_wk_klass((WKID)id, opt, CHECK);
@@ -1976,6 +1978,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   // JSR 292 classes
   WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
   WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(VolatileCallSite_klass);
+  // 首先会调用SystemDictionary::initialize_wk_klasses_until()函数遍历WK_KLASSES_DO宏中表示的所有需要预加载的类
   initialize_wk_klasses_until(jsr292_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
     initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);

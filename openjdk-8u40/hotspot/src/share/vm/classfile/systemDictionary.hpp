@@ -210,18 +210,21 @@ class SystemDictionary : AllStatic {
     WK_KLASSES_DO(WK_KLASS_ENUM)
     #undef WK_KLASS_ENUM
 
-    WKID_LIMIT,
+    WKID_LIMIT,                // 70
 
-    FIRST_WKID = NO_WKID + 1
+    FIRST_WKID = NO_WKID + 1   // 1
   };
 
   enum InitOption {
+    // 标记为Pre、Pre_JSR292的类会调用resolve_or_fail()函数进行预加载
+    // 如果类不存在，则报错
     Pre,                        // preloaded; error if not present
     Pre_JSR292,                 // preloaded if EnableInvokeDynamic
 
     // Order is significant.  Options before this point require resolve_or_fail.
     // Options after this point will use resolve_or_null instead.
-
+    // 标记为Opt、Opt_Only_JDK14NewRef、Opt_Only_JDK15的类会调用 resolve_or_null()函数进行预加载
+    // 如果不存在，则返回NULL
     Opt,                        // preload tried; NULL if not present
     Opt_Only_JDK14NewRef,       // preload tried; use only with NewReflection
     Opt_Only_JDK15,             // preload tried; use only with JDK1.5+

@@ -265,8 +265,10 @@ void Universe::genesis(TRAPS) {
     { MutexLocker mc(Compile_lock);
 
       // determine base vtable size; without that we cannot create the array klasses
+    // 计算数组的vtable的大小 值为5
       compute_base_vtable_size();
-    // HotSpot VM在初始化时就会创建Java中8个基本类型的一维数组实 例TypeArrayKlass
+      // HotSpot VM在初始化时就会创建Java中8个基本类型的一维数组实 例TypeArrayKlass
+      // UseSharedSpaces默认的值为false
       if (!UseSharedSpaces) {
         _boolArrayKlassObj      = TypeArrayKlass::create_klass(T_BOOLEAN, sizeof(jboolean), CHECK);
         _charArrayKlassObj      = TypeArrayKlass::create_klass(T_CHAR,    sizeof(jchar),    CHECK);
@@ -1196,6 +1198,7 @@ bool universe_post_init() {
 
 
 void Universe::compute_base_vtable_size() {
+  // 计算数组的vtable的大小，值为5
   _base_vtable_size = ClassLoader::compute_Object_vtable();
 }
 
