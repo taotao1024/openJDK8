@@ -77,6 +77,7 @@ public:
 //------------------------------ResourceMark-----------------------------------
 // A resource mark releases all resources allocated after it was constructed
 // when the destructor is called.  Typically used as a local variable.
+// 资源标记会在调用析构函数时释放构造后分配的所有资源。通常用作局部变量。
 class ResourceMark: public StackObj {
 protected:
   ResourceArea *_area;          // Resource area to stack allocate

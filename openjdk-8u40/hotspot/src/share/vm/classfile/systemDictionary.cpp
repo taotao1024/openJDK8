@@ -247,10 +247,13 @@ Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader
                  class_name->as_C_string(),
                  class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string()));
   if (FieldType::is_array(class_name)) {
+    // 数组，通过签名的格式来判断
     return resolve_array_class_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
   } else if (FieldType::is_obj(class_name)) {
+    // 普通类，通过签名的格式来判断
     ResourceMark rm(THREAD);
     // Ignore wrapping L and ;.
+    // 去掉签名中的开头字符L和结束字符;
     TempNewSymbol name = SymbolTable::new_symbol(class_name->as_C_string() + 1,
                                    class_name->utf8_length() - 2, CHECK_NULL);
     return resolve_instance_class_or_null(name, class_loader, protection_domain, CHECK_NULL);
@@ -274,8 +277,10 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
   FieldArrayInfo fd;
   // dimension and object_key in FieldArrayInfo are assigned as a side-effect
   // of this call
+  // 获取数组元素的类型
   BasicType t = FieldType::get_array_info(class_name, fd, CHECK_NULL);
   if (t == T_OBJECT) {
+    // 数组元素的类型为对象
     // naked oop "k" is OK here -- we assign back into it
     k = SystemDictionary::resolve_instance_class_or_null(fd.object_key(),
                                                          class_loader,
@@ -285,6 +290,7 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
       k = k->array_klass(fd.dimension(), CHECK_NULL);
     }
   } else {
+    // 数组元素的类型为Java基本类型
     k = Universe::typeArrayKlassObj(t);
     k = TypeArrayKlass::cast(k)->array_klass(fd.dimension(), CHECK_NULL);
   }
@@ -637,10 +643,14 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // All subsequent calls use find_class, and set has_loaded_class so that
   // before we return a result we call out to java to check for valid protection domain
   // to allow returning the Klass* and add it to the pd_set if it is valid
+  // 在变量 SystemDictionary::_dictionary 中查找是否已经加载类，如果加载了就直接返回
+  // 通过类名和类加载器计算Hash值
   unsigned int d_hash = dictionary()->compute_hash(name, loader_data);
+  // 计算在Hash表中的索引位置
   int d_index = dictionary()->hash_to_index(d_hash);
   Klass* probe = dictionary()->find(d_index, d_hash, name, loader_data,
                                       protection_domain, THREAD);
+  // 如果在字典中找到，就直接返回
   if (probe != NULL) return probe;
 
 
@@ -798,10 +808,11 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
       ResourceMark rm(THREAD);
       THROW_MSG_NULL(vmSymbols::java_lang_ClassCircularityError(), name->as_C_string());
     }
-
+    // 在字典中没有找到时，需要对类进行加载
     if (!class_has_been_loaded) {
 
       // Do actual loading
+      // 类加载 “双亲委派”机制体现 只要涉及类的加载，都会调用这个函数
       k = load_instance_class(name, class_loader, THREAD);
 
       // For UnsyncloadClass only
@@ -1075,7 +1086,10 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
 // JVM_DefineClass).
 // Note: class_name can be NULL. In that case we do not know the name of
 // the class until we have parsed the stream.
-
+/**
+*  HotSpot VM利用ClassFileStream将要加载的Class文件转换成文件流，
+*  然后调用SystemDictionary::resolve_from_stream()函数生成Klass实例
+*/
 Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                              Handle class_loader,
                                              Handle protection_domain,
@@ -1104,7 +1118,7 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   // throw potential ClassFormatErrors.
   //
   // Note: "name" is updated.
-
+  // 解析文件流，生成InstanceKlass
   instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
                                                              loader_data,
                                                              protection_domain,
@@ -1146,8 +1160,10 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
     // If a class loader supports parallel classloading handle parallel define requests
     // find_or_define_instance_class may return a different InstanceKlass
     if (is_parallelCapable(class_loader)) {
+      // 支持并行加载
       k = find_or_define_instance_class(class_name, class_loader, k, THREAD);
     } else {
+      // 如果禁止并行加载，那么直接利用SystemDictionary将InstanceKlass实例注册到SystemDictionary中
       define_instance_class(k, THREAD);
     }
   }
@@ -1289,13 +1305,18 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
   return ik;
 }
 #endif // INCLUDE_CDS
-
+/**
+* “双亲委派”机制体现，只要涉及类的加载，都会调用这个函数
+*/
 instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
+  // 空的Handle
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
+  // 使用引导类加载器加载类
   if (class_loader.is_null()) {
 
     // Search the shared system dictionary for classes preloaded into the
     // shared spaces.
+    // 在共享系统字典中搜索预加载到共享空间中的类，默认不使用共享空间，因此查找的结果为NULL
     instanceKlassHandle k;
     {
 #if INCLUDE_CDS
@@ -1305,18 +1326,23 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
     }
 
     if (k.is_null()) {
-      // Use VM class loader
+      // Use VM class loader 使用 VM 类加载程序
       PerfTraceTime vmtimer(ClassLoader::perf_sys_classload_time());
+      // 使用引导类加载器进行类加载
       k = ClassLoader::load_classfile(class_name, CHECK_(nh));
     }
 
     // find_or_define_instance_class may return a different InstanceKlass
+    // 调用SystemDictionary::find_or_define_instance_class>SystemDictionary::update_dictionary -> Dictionary::add_klass()
+    // 将生成的Klass实例保存起来 Dictionary的底层是Hash表数据结构，使用开链法解决Hash冲突
     if (!k.is_null()) {
+      // 支持并行加载，也就是允许同一个类加载器同时加载多个类
       k = find_or_define_instance_class(class_name, class_loader, k, CHECK_(nh));
     }
     return k;
   } else {
     // Use user specified class loader to load class. Call loadClass operation on class_loader.
+    // 使用指定的类加载器加载，最终会调用java.lang.ClassLoader类中的loadClass()
     ResourceMark rm(THREAD);
 
     assert(THREAD->is_Java_thread(), "must be a JavaThread");
@@ -1363,6 +1389,7 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
                               string,
                               CHECK_(nh));
     } else {
+      // 调用java.lang.ClassLoader对象中的loadClass()方法进行类加载
       JavaCalls::call_virtual(&result,
                               class_loader,
                               spec_klass,
@@ -1373,11 +1400,14 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
     }
 
     assert(result.get_type() == T_OBJECT, "just checking");
+    // 获取调用loadClass()方法返回的java.lang.Class对象
     oop obj = (oop) result.get_jobject();
 
     // Primitive classes return null since forName() can not be
     // used to obtain any of the Class objects representing primitives or void
+    // 调用loadClass()方法加载的必须是对象类型
     if ((obj != NULL) && !(java_lang_Class::is_primitive(obj))) {
+      // 获取java.lang.Class对象表示的Java类，也就是获取表示Java类的instanceKlass实例
       instanceKlassHandle k =
                 instanceKlassHandle(THREAD, java_lang_Class::as_Klass(obj));
       // For user defined Java class loaders, check that the name returned is
