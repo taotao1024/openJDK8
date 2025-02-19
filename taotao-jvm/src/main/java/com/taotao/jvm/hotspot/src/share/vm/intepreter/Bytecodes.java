@@ -5,6 +5,7 @@ public class Bytecodes {
     public static final int ILLEGAL = -1;
     public static final int NOP = 0;
     public static final int ACONST_NULL = 1;    // 0x01
+
     public static final int ICONST_0 = 3;   // 0x03
     public static final int ICONST_1 = 4;   // 0x04
     public static final int ICONST_2 = 5;   // 0x05
@@ -20,7 +21,7 @@ public class Bytecodes {
     public static final int FCONST_2 = 13;   // 0x0e
 
     public static final int DCONST_0 = 14;   // 0x0e
-    public static final int DCONST_1 = 15;   // 0x0f   // 0x0f
+    public static final int DCONST_1 = 15;   // 0x0f
 
     public static final int BIPUSH = 16;    // 0x10
     public static final int SIPUSH = 17;       // 0x11
@@ -30,6 +31,10 @@ public class Bytecodes {
     public static final int LDC2_W = 20;    // 0x14
 
     public static final int ILOAD = 21;   // 0x15
+    public static final int LLOAD = 22;   // 0x16
+    public static final int FLOAD = 23;   // 0x17
+    public static final int DLOAD = 24;   // 0x18
+    public static final int ALOAD = 25;   // 0x19
 
     public static final int ILOAD_0 = 26;   // 0x1a
     public static final int ILOAD_1 = 27;   // 0x1b
@@ -104,6 +109,9 @@ public class Bytecodes {
     public static final int CASTORE = 85; // 0x55
     public static final int SASTORE = 86; // 0x56
 
+    public static final int POP = 87;        // 0x57
+    public static final int POP2 = 88;        // 0x58
+
     public static final int DUP = 89;        // 0x59
     public static final int DUP_X1 = 90;     // 0x5a
     public static final int DUP_X2 = 91;     // 0x5b
@@ -112,10 +120,54 @@ public class Bytecodes {
     public static final int DUP2_X2 = 94;    // 0x5e
     public static final int SWAP = 95;       // 0x5f
 
+    //=====
     public static final int IADD = 96;      // 0x60
     public static final int LADD = 97;      // 0x61
     public static final int FADD = 98;      // 0x62
     public static final int DADD = 99;      // 0x63
+
+    public static final int ISUB = 100;      // 0x64
+    public static final int LSUB = 101;      // 0x65
+    public static final int FSUB = 102;      // 0x66
+    public static final int DSUB = 103;      // 0x67
+
+    public static final int IMUL = 104;      // 0x68
+    public static final int LMUL = 105;      // 0x69
+    public static final int FMUL = 106;      // 0x6a
+    public static final int DMUL = 107;      // 0x6b
+
+    public static final int IDIV = 108;      // 0x6c
+    public static final int LDIV = 109;      // 0x6d
+    public static final int FDIV = 110;      // 0x6e
+    public static final int DDIV = 111;      // 0x6f
+
+    public static final int IREM = 112;      // 0x70
+    public static final int LREM = 113;      // 0x71
+    public static final int FREM = 114;      // 0x72
+    public static final int DREM = 115;      // 0x73
+
+    public static final int INEG = 116;      // 0x74
+    public static final int LNEG = 117;      // 0x75
+    public static final int FNEG = 118;      // 0x76
+    public static final int DNEG = 119;      // 0x77
+
+    public static final int ISHL = 120;      // 0x78
+    public static final int LSHL = 121;      // 0x79
+
+    public static final int ISHR = 122;      // 0x7a
+    public static final int LSHR = 123;      // 0x7b
+
+    public static final int IUSHR = 124;      // 0x7c
+    public static final int LUSHR = 125;      // 0x7d
+
+    public static final int IAND = 126;      // 0x7e
+    public static final int LAND = 127;      // 0x7f
+
+    public static final int IOR = 128;      // 0x80
+    public static final int LOR = 129;      // 0x81
+
+    public static final int IXOR = 130;      // 0x82
+    public static final int LXOR = 131;      // 0x83
 
     public static final int IINC = 132;     // 0x84
 
@@ -159,9 +211,14 @@ public class Bytecodes {
     public static final int IF_ACMPNE = 166;    // 0xa6
 
     public static final int GOTO = 167;    // 0xa7
-
+    public static final int JSR = 168;     // 0xa8
+    public static final int RET = 169;     // 0xa9
+    public static final int TABLESWITCH = 170;     // 0xaa
+    public static final int LOOKUPSWITVH = 171;     // 0xab
     public static final int IRETURN = 172;      // 0xac
-
+    public static final int LRETURN = 173;      // 0xad
+    public static final int FRETURN = 174;      // 0xae
+    public static final int DRETURN = 175;      // 0xaf
     public static final int ARETURN = 176;      // 0xb0
     /**
      * 退出

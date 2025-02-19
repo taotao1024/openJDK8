@@ -37,6 +37,16 @@ public class BytecodeInterpreter extends StackObj {
             c = code.getU1Code();
 
             switch (c) {
+                case Bytecodes.ILLEGAL: {
+                    logger.info("执行指令: ILLEGAL");
+
+                    break;
+                }
+                case Bytecodes.NOP: {
+                    logger.info("执行指令: NOP");
+
+                    break;
+                }
                 case Bytecodes.ACONST_NULL: {
                     logger.info("执行指令: ACONST_NULL");
 
@@ -152,6 +162,17 @@ public class BytecodeInterpreter extends StackObj {
 
                     break;
                 }
+                case Bytecodes.SIPUSH: {
+                    logger.info("执行指令: SIPUSH");
+
+                    // 获取操作数
+                    int val = code.getUnsignedShort();
+
+                    // 操作数入栈（操作数栈）
+                    frame.getStack().push(new StackValue(BasicType.T_INT, val));
+
+                    break;
+                }
                 case Bytecodes.LDC: {
                     logger.info("执行指令: LDC");
 
@@ -180,6 +201,14 @@ public class BytecodeInterpreter extends StackObj {
                             break;
                         }
                         case ConstantPool.JVM_CONSTANT_Class: {
+                            String content = method.getBelongKlass().getConstantPool().getClassName(operand);
+
+                            try {
+                                frame.getStack().push(new StackValue(BasicType.T_OBJECT, Class.forName(content.replace('/', '.'))));
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                            }
+
                             break;
                         }
                         default: {
@@ -190,6 +219,10 @@ public class BytecodeInterpreter extends StackObj {
                     }
 
                     break;
+                }
+
+                case Bytecodes.LDC_W: {
+                    throw new Error("未做处理：LDC_W");
                 }
                 /**
                  * 将常量池中的long、doubel类型的数值推送至栈顶
@@ -209,7 +242,6 @@ public class BytecodeInterpreter extends StackObj {
                      *      double是用两个slot存储的
                      */
                     int tag = method.getBelongKlass().getConstantPool().getTag()[operand];
-
                     if (ConstantPool.JVM_CONSTANT_Long == tag) {
                         long l = (long) method.getBelongKlass().getConstantPool().getDataMap().get(operand);
                         frame.getStack().push(new StackValue(BasicType.T_LONG, l));
@@ -233,10 +265,32 @@ public class BytecodeInterpreter extends StackObj {
 
                     break;
                 }
+                case Bytecodes.ILOAD: {
+                    logger.info("执行指令: ILOAD");
+
+                    int val = code.getU1Code();
+
+                    StackValue value = frame.getLocals().get(val);
+
+                    frame.getStack().push(value);
+
+                    break;
+                }
+                case Bytecodes.LLOAD: {
+                    logger.info("执行指令: LLOAD");
+
+                    int val = code.getU1Code();
+
+                    StackValue value = frame.getLocals().get(val);
+
+                    frame.getStack().push(value);
+
+                    break;
+                }
                 case Bytecodes.ILOAD_1: {
                     logger.info("执行指令: ILOAD_1");
 
-                    // 取出局部变量表中的数据
+                    // 取出局部变量表的数据
                     StackValue value = frame.getLocals().get(1);
 
                     // 压入栈
@@ -247,7 +301,7 @@ public class BytecodeInterpreter extends StackObj {
                 case Bytecodes.ILOAD_2: {
                     logger.info("执行指令: ILOAD_2");
 
-                    // 取出局部变量表中的数据
+                    // 取出局部变量表的数据
                     StackValue value = frame.getLocals().get(2);
 
                     // 压入栈
@@ -258,7 +312,7 @@ public class BytecodeInterpreter extends StackObj {
                 case Bytecodes.ILOAD_3: {
                     logger.info("执行指令: ILOAD_3");
 
-                    // 取出局部变量表中的数据
+                    // 取出局部变量表的数据
                     StackValue value = frame.getLocals().get(3);
 
                     // 压入栈
@@ -466,6 +520,34 @@ public class BytecodeInterpreter extends StackObj {
 
                     break;
                 }
+                case Bytecodes.DALOAD: {
+                    logger.info("执行指令: DALOAD");
+
+                    int index = frame.getStack().pop().getVal();
+                    ArrayOop oop = frame.getStack().popArray(frame);
+
+                    if (index > oop.getSize() - 1) {
+                        throw new Error("数组访问越界");
+                    }
+
+                    frame.getStack().pushDouble((Double) oop.getData().get(index));
+
+                    break;
+                }
+                case Bytecodes.AALOAD: {
+                    logger.info("执行指令: AALOAD");
+
+                    int index = frame.getStack().pop().getVal();
+                    ArrayOop oop = frame.getStack().popArray(frame);
+
+                    if (index > oop.getSize() - 1) {
+                        throw new Error("数组访问越界");
+                    }
+
+                    frame.getStack().push(new StackValue(BasicType.T_OBJECT, oop.getData().get(index)));
+
+                    break;
+                }
                 case Bytecodes.BALOAD: {
                     logger.info("执行指令: BALOAD");
 
@@ -482,19 +564,54 @@ public class BytecodeInterpreter extends StackObj {
 
                     break;
                 }
-                case Bytecodes.ILOAD: {
-                    logger.info("执行指令: ILOAD");
+                case Bytecodes.ISTORE: {
+                    logger.info("执行指令: ISTORE");
 
-                    int val = code.getU1Code();
+                    // 获取操作数
+                    int index = code.getU1Code();
 
-                    StackValue value = frame.getLocals().get(val);
+                    // 取出数据
+                    StackValue values = frame.getStack().pop();
 
-                    frame.getStack().push(value);
+                    // 存入局部变量表
+                    frame.getLocals().add(index, values);
 
                     break;
                 }
-                case Bytecodes.ISTORE: {
-                    logger.info("执行指令: ISTORE");
+                case Bytecodes.LSTORE: {
+                    logger.info("执行指令: DSTORE");
+
+                    // 获取操作数
+                    int index = code.getU1Code();
+
+                    // 取出数据
+                    StackValue values = frame.getStack().pop();
+
+                    // 存入局部变量表
+                    frame.getLocals().add(index, values);
+
+                    break;
+                }
+                case Bytecodes.FSTORE: {
+                    throw new Error("未做处理：FSTORE");
+                }
+                case Bytecodes.DSTORE: {
+                    logger.info("执行指令: DSTORE");
+
+                    // 获取操作数
+                    int index = code.getU1Code();
+
+                    // 取出数据
+                    StackValue[] values = frame.getStack().popDouble2();
+
+                    // 存入局部变量表
+                    frame.getLocals().add(index, values[0]);
+                    frame.getLocals().add(index + 1, values[1]);
+
+                    break;
+                }
+                case Bytecodes.ASTORE: {
+                    logger.info("执行指令: DSTORE");
 
                     // 获取操作数
                     int index = code.getU1Code();
@@ -932,6 +1049,312 @@ public class BytecodeInterpreter extends StackObj {
 
                     break;
                 }
+                case Bytecodes.ISUB: {
+                    logger.info("执行指令: ISUB");
+
+                    // 取出操作数
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    // 检查操作数类型
+                    if (value1.getType() != BasicType.T_INT || value2.getType() != BasicType.T_INT) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    // 运算
+                    int ret = (int)value2.getData() - (int)value1.getData();
+
+                    logger.info("\t 执行指令: ISUB，运行结果: " + ret);
+
+                    // 压入栈
+                    frame.getStack().push(new StackValue(BasicType.T_INT, ret));
+
+                    break;
+                }
+                case Bytecodes.LSUB: {
+                    logger.info("执行指令: LSUB");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    // 检查操作数类型
+                    if (value1.getType() != BasicType.T_LONG || value2.getType() != BasicType.T_LONG) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    long ret = (long)value2.getData() - (long)value1.getData();
+
+                    logger.info("执行指令: LSUB，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_LONG, ret));
+
+                    break;
+                }
+                case Bytecodes.FSUB: {
+                    logger.info("执行指令: FSUB");
+
+                    // 取出操作数
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    // 检查操作数类型
+                    if (value1.getType() != BasicType.T_FLOAT || value2.getType() != BasicType.T_FLOAT) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    // 运算
+                    float ret = (float)value2.getData() - (float)value1.getData();
+
+                    logger.info("执行指令: FSUB，运行结果: " + ret);
+
+                    // 压入栈
+                    frame.getStack().push(new StackValue(BasicType.T_FLOAT, ret));
+
+                    break;
+                }
+                case Bytecodes.DSUB: {
+                    logger.info("执行指令: DSUB");
+
+                    // 取出数据
+                    double v1 = frame.getStack().popDouble();
+                    double v2 = frame.getStack().popDouble();
+
+                    double ret = v2 - v1;
+
+                    logger.info("执行指令: DSUB， 结果: " + ret);
+
+                    frame.getStack().pushDouble(ret);
+
+                    break;
+                }
+                case Bytecodes.IMUL: {
+                    logger.info("执行指令: IMUL");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_INT || value2.getType() != BasicType.T_INT) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    int ret = (int)value2.getData() * (int)value1.getData();
+
+                    logger.info("\t 执行指令: IMUL，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_INT, ret));
+
+                    break;
+                }
+                case Bytecodes.LMUL: {
+                    logger.info("执行指令: LMUL");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_LONG || value2.getType() != BasicType.T_LONG) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    long ret = (long)value2.getData() * (long)value1.getData();
+
+                    logger.info("执行指令: LMUL，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_LONG, ret));
+
+                    break;
+                }
+                case Bytecodes.FMUL: {
+                    logger.info("执行指令: FMUL");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_FLOAT || value2.getType() != BasicType.T_FLOAT) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    float ret = (float)value2.getData() * (float)value1.getData();
+
+                    logger.info("执行指令: FSUB，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_FLOAT, ret));
+
+                    break;
+                }
+                case Bytecodes.DMUL: {
+                    logger.info("执行指令: DMUL");
+
+                    double v1 = frame.getStack().popDouble();
+                    double v2 = frame.getStack().popDouble();
+
+                    double ret = v1 * v2;
+
+                    logger.info("执行指令: DMUL， 结果: " + ret);
+
+                    frame.getStack().pushDouble(ret);
+
+                    break;
+                }
+                case Bytecodes.IDIV: {
+                    logger.info("执行指令: IDIV");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_INT || value2.getType() != BasicType.T_INT) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    int ret = (int)value2.getData() / (int)value1.getData();
+
+                    logger.info("\t 执行指令: IDIV，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_INT, ret));
+
+                    break;
+                }
+                case Bytecodes.LDIV: {
+                    logger.info("执行指令: LDIV");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_LONG || value2.getType() != BasicType.T_LONG) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    long ret = (long)value2.getData() / (long)value1.getData();
+
+                    logger.info("执行指令: LDIV，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_LONG, ret));
+
+                    break;
+                }
+                case Bytecodes.FDIV: {
+                    logger.info("执行指令: FDIV");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_FLOAT || value2.getType() != BasicType.T_FLOAT) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    float ret = (float)value2.getData() / (float)value1.getData();
+
+                    logger.info("执行指令: FDIV，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_FLOAT, ret));
+
+                    break;
+                }
+                case Bytecodes.DDIV: {
+                    logger.info("执行指令: DDIV");
+
+                    double v1 = frame.getStack().popDouble();
+                    double v2 = frame.getStack().popDouble();
+
+                    double ret = v2 / v1;
+
+                    logger.info("执行指令: DDIV， 结果: " + ret);
+
+                    frame.getStack().pushDouble(ret);
+
+                    break;
+                }
+                case Bytecodes.IREM: {
+                    logger.info("执行指令: IREM");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_INT || value2.getType() != BasicType.T_INT) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    int ret = (int)value2.getData() % (int)value1.getData();
+
+                    logger.info("\t 执行指令: IREM，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_INT, ret));
+
+                    break;
+                }
+                case Bytecodes.LREM: {
+                    logger.info("执行指令: LREM");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_LONG || value2.getType() != BasicType.T_LONG) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    long ret = (long)value2.getData() % (long)value1.getData();
+
+                    logger.info("执行指令: LREM，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_LONG, ret));
+
+                    break;
+                }
+                case Bytecodes.FREM: {
+                    logger.info("执行指令: FREM");
+
+                    StackValue value1 = frame.getStack().pop();
+                    StackValue value2 = frame.getStack().pop();
+
+                    if (value1.getType() != BasicType.T_FLOAT || value2.getType() != BasicType.T_FLOAT) {
+                        logger.error("不匹配的数据类型");
+
+                        throw new Error("不匹配的数据类型");
+                    }
+
+                    float ret = (float)value2.getData() % (float)value1.getData();
+
+                    logger.info("执行指令: FREM，运行结果: " + ret);
+
+                    frame.getStack().push(new StackValue(BasicType.T_FLOAT, ret));
+
+                    break;
+                }
+                case Bytecodes.DREM: {
+                    logger.info("执行指令: DREM");
+
+                    double v1 = frame.getStack().popDouble();
+                    double v2 = frame.getStack().popDouble();
+
+                    double ret = v2 % v1;
+
+                    logger.info("执行指令: DREM， 结果: " + ret);
+
+                    frame.getStack().pushDouble(ret);
+
+                    break;
+                }
                 case Bytecodes.IINC: {
                     logger.info("执行指令: IINC");
 
@@ -1121,7 +1544,7 @@ public class BytecodeInterpreter extends StackObj {
                     break;
                 }
                 case Bytecodes.FCMPL: {
-                    logger.info("执行指令: LCMP");
+                    logger.info("执行指令: FCMPL");
 
                     float f1 = (float) frame.getStack().pop().getData();
                     float f2 = (float) frame.getStack().pop().getData();
@@ -1469,6 +1892,22 @@ public class BytecodeInterpreter extends StackObj {
 
                     break;
                 }
+                case Bytecodes.IRETURN: {
+                    logger.info("执行指令: IRETURN");
+
+                    // 从当前栈帧中取出数据
+                    StackValue value = frame.getStack().pop();
+
+                    // 当前栈帧出栈
+                    thread.getStack().pop();
+
+                    logger.info("\t 剩余栈帧数量: " + thread.getStack().size());
+
+                    // 将返回值压人调用者的栈
+                    ((JavaVFrame) thread.getStack().peek()).getStack().push(value);
+
+                    break;
+                }
                 case Bytecodes.ARETURN: {
                     logger.info("执行指令: ARETURN");
 
@@ -1512,6 +1951,91 @@ public class BytecodeInterpreter extends StackObj {
                         frame.getStack().push(new StackValue(BasicType.T_OBJECT, field.get(null)));
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
+                    } catch (NoSuchFieldException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+
+                    break;
+                }
+                case Bytecodes.PUTSTATIC: {
+                    throw new Error("未做处理：PUTSTATIC");
+                }
+                case Bytecodes.GETFIELD: {
+                    logger.info("执行指令: GETFIELD");
+
+                    short operand = code.getUnsignedShort();
+
+                    //=====
+                    String className = method.getBelongKlass().getConstantPool().getClassNameByMethodInfo(operand);
+                    String fieldName = method.getBelongKlass().getConstantPool().getFieldName(operand);
+                    String descriptorName = method.getBelongKlass().getConstantPool().getDescriptorNameByMethodInfo(operand);
+
+                    logger.info("给属性赋值: " + className + ":" + fieldName + "#" + descriptorName);
+
+                    //=====
+                    DescriptorStream2 descriptorStream = new DescriptorStream2(descriptorName);
+                    descriptorStream.parseField();
+
+                    //=====
+                    Object obj = frame.getStack().pop().getObject();
+
+                    Class<?> clazz = null;
+
+                    try {
+                        if (null == obj || obj.equals("")) {
+                            throw new Error("此种情况未做处理");
+                        } else {
+                            clazz = obj.getClass();
+                        }
+
+                        Field field = clazz.getDeclaredField(fieldName);
+                        field.setAccessible(true);
+
+                        descriptorStream.pushField(field.get(obj), frame);
+                    } catch (NoSuchFieldException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+
+                    break;
+                }
+                case Bytecodes.PUTFIELD: {
+                    logger.info("执行指令: PUTFIELD");
+
+                    short operand = code.getUnsignedShort();
+
+                    //=====
+                    String className = method.getBelongKlass().getConstantPool().getClassNameByMethodInfo(operand);
+                    String fieldName = method.getBelongKlass().getConstantPool().getFieldName(operand);
+                    String descriptorName = method.getBelongKlass().getConstantPool().getDescriptorNameByMethodInfo(operand);
+
+                    logger.info("给属性赋值: " + className + ":" + fieldName + "#" + descriptorName);
+
+                    //=====
+                    DescriptorStream2 descriptorStream = new DescriptorStream2(descriptorName);
+                    descriptorStream.parseField();
+
+                    Object params = descriptorStream.getFieldVal(frame);
+
+                    //=====
+                    Object obj = frame.getStack().pop().getObject();
+
+                    Class<?> clazz = null;
+
+                    try {
+                        if (null == obj || obj.equals("")) {
+                            throw new Error("此种情况未做处理");
+                        } else {
+                            clazz = obj.getClass();
+                        }
+
+                        Field field = clazz.getDeclaredField(fieldName);
+                        field.setAccessible(true);
+
+                        field.set(obj, params);
                     } catch (NoSuchFieldException e) {
                         e.printStackTrace();
                     } catch (IllegalAccessException e) {
@@ -1605,6 +2129,11 @@ public class BytecodeInterpreter extends StackObj {
 
                     logger.info("执行方法: " + className + ":" + methodName + "#" + descriptorName);
 
+                    if (className.equals("java/lang/Object") && methodName.equals("<init>")) {
+//                        code.reset();
+//                        thread.getStack().pop();
+                    }
+
                     if (className.startsWith("java")) {
                         DescriptorStream2 descriptorStream = new DescriptorStream2(descriptorName);
                         descriptorStream.parseMethod();
@@ -1625,6 +2154,13 @@ public class BytecodeInterpreter extends StackObj {
                          * -----------
                          */
                         StackValue stackValue = frame.getStack().pop();
+                        if (BasicType.T_ADDRESS == stackValue.getType()) {
+                            // 因为没有去调用Object的构造方法，所以需要手动弹出栈帧
+//                            thread.getStack().pop();
+
+                            break;
+                        }
+
                         Object object = stackValue.getObject();
 
                         // 判断调用的是构造方法还是普通方法
@@ -1725,6 +2261,8 @@ public class BytecodeInterpreter extends StackObj {
                         }
                     } else {
                         InstanceKlass klass = BootClassLoader.findLoadedKlass(className.replace('/', '.'));
+
+                        // 触发类的加载
                         if (null == klass) {
                             logger.info("\t 开始加载未加载的类:" + className);
 
@@ -1832,6 +2370,77 @@ public class BytecodeInterpreter extends StackObj {
 
                     break;
                 }
+                case Bytecodes.ATHROW: {
+                    logger.info("执行指令: ATHROW");
+
+                    // 取出栈顶元素
+                    Throwable throwable = (Throwable) frame.getStack().pop().getObject();
+
+                    throwable.printStackTrace();
+
+                    if (throwable instanceof Error) {
+                        System.exit(-1);
+                    }
+
+                    break;
+                }
+                /**
+                 * 只分配内存
+                 *
+                 * Integer: 没有不带参数的构造函数
+                 * String: 调用不带参数的构造函数，返回空
+                 */
+                case Bytecodes.NEW: {
+                    logger.info("执行指令: NEW");
+
+                    // 取出操作数
+                    short operand = code.getUnsignedShort();
+
+                    String className = method.getBelongKlass().getConstantPool().getClassName(operand);
+
+                    try {
+                        Class<?> clazz = Class.forName(className.replace('/', '.'));
+                        Constructor<?> constructor = clazz.getConstructor();
+
+                        Object o = constructor.newInstance();
+
+                        if (o instanceof Throwable) {
+                            frame.getStack().push(new StackValue(BasicType.T_Throwable, o));
+                        } else {
+                            frame.getStack().push(new StackValue(BasicType.T_OBJECT, o));
+                        }
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchMethodException e) {
+                        /**
+                         * 如果没有无参构造函数，就传null，保证栈帧平衡
+                         * 后面调用到构造方法的时候进行判断处理
+                         */
+                        frame.getStack().push(new StackValue(BasicType.T_OBJECT, null));
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    }
+
+                    break;
+                }
+//                case Bytecodes.NEW: {
+//                    logger.info("执行指令: NEW");
+//
+//                    // 取出操作数
+//                    short operand = code.getUnsignedShort();
+//
+//                    long ptr = Unsafe.allocateObject();
+//
+//                    System.out.println(ptr);
+//
+//                    frame.getStack().push(new StackValue(BasicType.T_ADDRESS, ptr));
+//
+//                    break;
+//                }
                 case Bytecodes.NEWARRAY: {
                     logger.info("执行指令: NEWARRAY");
 
@@ -1865,6 +2474,20 @@ public class BytecodeInterpreter extends StackObj {
                     ArrayOop o = frame.getStack().popArray(frame);
 
                     frame.getStack().pushInt(o.getSize(), frame);
+
+                    break;
+                }
+                case Bytecodes.CHECKCAST: {
+                    logger.info("执行指令: CHECKCAST");
+
+                    // 取出操作数
+                    short operand = code.getUnsignedShort();
+                    String className = method.getBelongKlass().getConstantPool().getClassName(operand);
+
+                    // 取出栈顶元素
+//                    Object o = frame.getStack().pop().getObject();
+
+//                    System.out.println(o.getClass().getSimpleName());
 
                     break;
                 }

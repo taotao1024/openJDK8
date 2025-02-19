@@ -41,7 +41,7 @@ public class LambdaEngine {
         BootstrapMethods bootstrapMethods = (BootstrapMethods) method.getBelongKlass().getAttributeInfos().get("BootstrapMethods");
 
         BootstrapMethods.Item item = bootstrapMethods.getBootstrapMethods().get(bootMethodIndex);
-
+        // 去除第一个信息
         int methodHandleIndex = item.getBootstrapArguments()[1];
 
         //=====
@@ -130,7 +130,7 @@ public class LambdaEngine {
         try {
             Class returnClazz = Class.forName(descriptorStream.getReturnElement().getTypeDesc().replace('/', '.'));
             Class callerClazz = Class.forName(className.replace('/', '.'));
-
+            // MethodHandles执行方法
             MethodHandles.Lookup lookup = getLookup(callerClazz);
 
             Method method = callerClazz.getDeclaredMethod(lambdaMethodName, paramsClass);
@@ -139,7 +139,7 @@ public class LambdaEngine {
             MethodType type = unreflect.type();
 
             MethodType factoryType = MethodType.methodType(returnClazz);
-
+            // 生成动态调用点
             CallSite callSite = LambdaMetafactory.metafactory(lookup, sourceMethodName, factoryType, type, unreflect, type);
             MethodHandle target = callSite.getTarget();
 
