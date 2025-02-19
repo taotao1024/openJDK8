@@ -3,20 +3,35 @@ package com.taotao.jvm.hotspot.src.share.vm.classfile;
 import com.taotao.jvm.hotspot.src.share.tools.DataTranslate;
 import com.taotao.jvm.hotspot.src.share.tools.Stream;
 import com.taotao.jvm.hotspot.src.share.vm.intepreter.BytecodeStream;
+import com.taotao.jvm.hotspot.src.share.vm.oops.Annotation;
 import com.taotao.jvm.hotspot.src.share.vm.oops.AttributeInfo;
+import com.taotao.jvm.hotspot.src.share.vm.oops.BootstrapMethods;
 import com.taotao.jvm.hotspot.src.share.vm.oops.CodeAttributeInfo;
 import com.taotao.jvm.hotspot.src.share.vm.oops.ConstantPool;
 import com.taotao.jvm.hotspot.src.share.vm.oops.FieldInfo;
+import com.taotao.jvm.hotspot.src.share.vm.oops.InnerClasses;
 import com.taotao.jvm.hotspot.src.share.vm.oops.InstanceKlass;
 import com.taotao.jvm.hotspot.src.share.vm.oops.InterfaceInfo;
 import com.taotao.jvm.hotspot.src.share.vm.oops.LineNumberTable;
 import com.taotao.jvm.hotspot.src.share.vm.oops.LocalVariableTable;
 import com.taotao.jvm.hotspot.src.share.vm.oops.MethodInfo;
-import com.taotao.jvm.hotspot.src.share.vm.oops.*;
+import com.taotao.jvm.hotspot.src.share.vm.oops.RuntimeInvisibleAnnotations;
+import com.taotao.jvm.hotspot.src.share.vm.oops.RuntimeVisibleAnnotations;
 import com.taotao.jvm.hotspot.src.share.vm.utilities.AccessFlags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * HotSpot VM定义了ClassFileParser类辅助读取及保存类解析的相关信息
+ * openjdk-8u40/hotspot/src/share/vm/classfile/classFileParser.hpp
+ * class ClassFileParser VALUE_OBJ_CLASS_SPEC
+ * <p>
+ * 在类解析的过程中，解析出的信息会暂时保存在
+ * ClassFileParser实例的相关变量中，最后会创建
+ * InstanceKlass实例保存这些信息，然后将
+ * InstanceKlass实例放入字典中，在保证唯一性的同时
+ * 也提高了查询效率。
+ */
 public class ClassFileParser {
 
     private static Logger logger = LoggerFactory.getLogger(ClassFileParser.class);
@@ -772,7 +787,7 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, new String(str));
 
-                    logger.info("\t第 " + i+ " 个: 类型: utf8，值: " + klass.getConstantPool().getDataMap().get(i));
+                    logger.info("\t第 " + i + " 个: 类型: utf8，值: " + klass.getConstantPool().getDataMap().get(i));
 
                     break;
                 }
@@ -845,7 +860,7 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, DataTranslate.byteToUnsignedShort(u2Arr));
 
-                    logger.info("\t第 " + i+ " 个: 类型: Class，值: " + klass.getConstantPool().getDataMap().get(i));
+                    logger.info("\t第 " + i + " 个: 类型: Class，值: " + klass.getConstantPool().getDataMap().get(i));
 
                     break;
                 }
@@ -879,7 +894,7 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, classIndex << 16 | nameAndTypeIndex);
 
-                    logger.info("\t第 " + i+ " 个: 类型: Field，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
+                    logger.info("\t第 " + i + " 个: 类型: Field，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
 
                     break;
                 }
@@ -901,7 +916,7 @@ public class ClassFileParser {
                     // 将classIndex与nameAndTypeIndex拼成一个，前十六位是classIndex，后十六位是nameAndTypeIndex
                     klass.getConstantPool().getDataMap().put(i, classIndex << 16 | nameAndTypeIndex);
 
-                    logger.info("\t第 " + i+ " 个: 类型: Method，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
+                    logger.info("\t第 " + i + " 个: 类型: Method，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
 
                     break;
                 }
@@ -944,7 +959,7 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, methodNameIndex << 16 | methodDescriptorIndex);
 
-                    logger.info("\t第 " + i+ " 个: 类型: NameAndType，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
+                    logger.info("\t第 " + i + " 个: 类型: NameAndType，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
 
                     break;
                 }
@@ -963,7 +978,7 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, referenceKind << 16 | referenceIndex);
 
-                    logger.info("\t第 " + i+ " 个: 类型: MethodHandle，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
+                    logger.info("\t第 " + i + " 个: 类型: MethodHandle，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
 
                     break;
                 }
@@ -976,7 +991,7 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, DataTranslate.byteToUnsignedShort(u2Arr));
 
-                    logger.info("\t第 " + i+ " 个: 类型: MethodType，值: " + klass.getConstantPool().getDataMap().get(i));
+                    logger.info("\t第 " + i + " 个: 类型: MethodType，值: " + klass.getConstantPool().getDataMap().get(i));
 
                     break;
                 }
@@ -997,7 +1012,7 @@ public class ClassFileParser {
 
                     klass.getConstantPool().getDataMap().put(i, bootstrapMethodAttrIndex << 16 | methodDescriptorIndex);
 
-                    logger.info("\t第 " + i+ " 个: 类型: InvokeDynamic，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
+                    logger.info("\t第 " + i + " 个: 类型: InvokeDynamic，值: 0x" + Integer.toHexString((int) klass.getConstantPool().getDataMap().get(i)));
 
                     break;
                 }

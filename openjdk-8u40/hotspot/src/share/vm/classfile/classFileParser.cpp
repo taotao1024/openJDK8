@@ -93,7 +93,9 @@
 
 // Extension method support.
 #define JAVA_8_VERSION                    52
-
+/**
+* 解析常量池
+*/
 void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
   // Use a local copy of ClassFileStream. It helps the C++ compiler to optimize
   // this function (_current can be allocated in a register, with scalar
@@ -321,7 +323,9 @@ inline Symbol* check_symbol_at(constantPoolHandle cp, int index) {
   else
     return NULL;
 }
-
+/**
+* 解析常量池
+*/
 constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   ClassFileStream* cfs = stream();
   constantPoolHandle nullHandle;
@@ -1084,7 +1088,9 @@ class FieldAllocationCount: public ResourceObj {
     return atype;
   }
 };
-
+/**
+* 解析字段
+*/
 Array<u2>* ClassFileParser::parse_fields(Symbol* class_name,
                                          bool is_interface,
                                          FieldAllocationCount *fac,
@@ -2525,7 +2531,9 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
 // The promoted_flags parameter is used to pass relevant access_flags
 // from the methods back up to the containing klass. These flag values
 // are added to klass's access_flags.
-
+/**
+* 解析方法
+*/
 Array<Method*>* ClassFileParser::parse_methods(bool is_interface,
                                                AccessFlags* promoted_flags,
                                                bool* has_final_method,

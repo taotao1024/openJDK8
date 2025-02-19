@@ -1109,6 +1109,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
     e = _first_entry;
     while (e != NULL) {
       // open_stream()函数会返回定义此类的Class文件的ClassFileStream实例。
+      // 并且返回的实例中的_buffer_start、_buffer_end和_current属性已经有了初始值。
       stream = e->open_stream(file_name, CHECK_NULL);
       if (!context.check(stream, classpath_index)) {
         return h; // NULL

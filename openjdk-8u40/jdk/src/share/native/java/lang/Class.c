@@ -131,7 +131,7 @@ Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
         JNU_ThrowClassNotFoundException(env, clname);
         goto done;
     }
-
+    // hotspot/src/share/vm/prims/jvm.cpp::JVM_FindClassFromCaller
     cls = JVM_FindClassFromCaller(env, clname, initialize, loader, caller);
 
  done:

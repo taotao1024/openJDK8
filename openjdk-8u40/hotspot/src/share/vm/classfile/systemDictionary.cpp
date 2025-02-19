@@ -192,7 +192,9 @@ bool SystemDictionary::is_ext_class_loader(Handle class_loader) {
 // Resolving of classes
 
 // Forwards to resolve_or_null
-
+// 该函数会遵循双亲委派机制加载类通常
+// 会创建或从Dictionary中查询已经加载的InstanceKlass实例
+// 不涉及对类的连接和初始化等操作。
 Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS) {
   Klass* klass = resolve_or_null(class_name, class_loader, protection_domain, THREAD);
   // 如果之前已经产生了异常或klass为空，则抛出异常
