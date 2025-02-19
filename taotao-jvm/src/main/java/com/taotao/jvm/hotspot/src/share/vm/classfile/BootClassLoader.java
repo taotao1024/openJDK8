@@ -67,6 +67,8 @@ public class BootClassLoader {
         String filePath = searchPath + tmpName + SUFFIX;
 
         // 读取字节码文件
+        // 如果要读取Class文件的内容，首先需要获取Class文件对应的字节流
+        // openjdk/hotspot/src/share/vm/classfile/classFileStream.hpp
         byte[] content = FileUtil.readBytes(new File(filePath));
 
         // 解析字节码文件

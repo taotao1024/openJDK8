@@ -261,6 +261,9 @@ public final class Class<T> implements java.io.Serializable,
     public static Class<?> forName(String className)
                 throws ClassNotFoundException {
         Class<?> caller = Reflection.getCallerClass();
+        // native Class<?> forName0
+        // openjdk-8u40/jdk/src/share/native/java/lang/Class.c::Java_java_lang_Class_forName0
+        // 第2个参数的值为true，表示要对类进行初始化
         return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
     }
 

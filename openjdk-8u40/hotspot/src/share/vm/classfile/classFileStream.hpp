@@ -50,8 +50,12 @@
 
 class ClassFileStream: public ResourceObj {
  private:
+  // 指向流的第一个字符位置
   u1*   _buffer_start; // Buffer bottom
+  // 指向流的最后一个字符的下一个位置
   u1*   _buffer_end;   // Buffer top (one past last element)
+  // 当前读取的字符位置
+  // 通过_current指针可以读取整个Class文件的内容
   u1*   _current;      // Current buffer position
   const char* _source; // Source of stream (directory name, ZIP/JAR archive name)
   bool  _need_verify;  // True if verification is on for the class file
