@@ -4,6 +4,7 @@ import com.taotao.jvm.hotspot.src.share.vm.classfile.BootClassLoader;
 import com.taotao.jvm.hotspot.src.share.vm.classfile.DescriptorStream2;
 import com.taotao.jvm.hotspot.src.share.vm.memory.StackObj;
 import com.taotao.jvm.hotspot.src.share.vm.oops.ArrayOop;
+import com.taotao.jvm.hotspot.src.share.vm.oops.CodeAttributeInfo;
 import com.taotao.jvm.hotspot.src.share.vm.oops.ConstantPool;
 import com.taotao.jvm.hotspot.src.share.vm.oops.InstanceKlass;
 import com.taotao.jvm.hotspot.src.share.vm.oops.MethodInfo;
@@ -25,6 +26,8 @@ public class BytecodeInterpreter extends StackObj {
     private static Logger logger = LoggerFactory.getLogger(BytecodeInterpreter.class);
 
     public static void run(JavaThread thread, MethodInfo method) {
+        CodeAttributeInfo codeAttributeInfo = method.getAttributes()[0];
+
         // 得到字节码指令
         BytecodeStream code = method.getAttributes()[0].getCode();
 
@@ -965,7 +968,7 @@ public class BytecodeInterpreter extends StackObj {
 
                         frame.getStack().pushDouble(d);
                         frame.getStack().pushDouble(d);
-                    } else if (BasicType.T_LONG == value.getType()){
+                    } else if (BasicType.T_LONG == value.getType()) {
                         frame.getStack().push(value);
                     } else {
                         throw new Error("无法识别的类型");
@@ -986,7 +989,7 @@ public class BytecodeInterpreter extends StackObj {
                     }
 
                     // 运算
-                    int ret = (int)value1.getData() + (int)value2.getData();
+                    int ret = (int) value1.getData() + (int) value2.getData();
 
                     logger.info("执行指令: IADD，运行结果: " + ret);
 
@@ -1006,7 +1009,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    long ret = (long)value1.getData() + (long)value2.getData();
+                    long ret = (long) value1.getData() + (long) value2.getData();
 
                     logger.info("执行指令: LADD，运行结果: " + ret);
 
@@ -1027,7 +1030,7 @@ public class BytecodeInterpreter extends StackObj {
                     }
 
                     // 运算
-                    float ret = (float)value1.getData() + (float)value2.getData();
+                    float ret = (float) value1.getData() + (float) value2.getData();
 
                     logger.info("执行指令: FADD，运行结果: " + ret);
 
@@ -1064,7 +1067,7 @@ public class BytecodeInterpreter extends StackObj {
                     }
 
                     // 运算
-                    int ret = (int)value2.getData() - (int)value1.getData();
+                    int ret = (int) value2.getData() - (int) value1.getData();
 
                     logger.info("\t 执行指令: ISUB，运行结果: " + ret);
 
@@ -1086,7 +1089,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    long ret = (long)value2.getData() - (long)value1.getData();
+                    long ret = (long) value2.getData() - (long) value1.getData();
 
                     logger.info("执行指令: LSUB，运行结果: " + ret);
 
@@ -1109,7 +1112,7 @@ public class BytecodeInterpreter extends StackObj {
                     }
 
                     // 运算
-                    float ret = (float)value2.getData() - (float)value1.getData();
+                    float ret = (float) value2.getData() - (float) value1.getData();
 
                     logger.info("执行指令: FSUB，运行结果: " + ret);
 
@@ -1145,7 +1148,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    int ret = (int)value2.getData() * (int)value1.getData();
+                    int ret = (int) value2.getData() * (int) value1.getData();
 
                     logger.info("\t 执行指令: IMUL，运行结果: " + ret);
 
@@ -1165,7 +1168,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    long ret = (long)value2.getData() * (long)value1.getData();
+                    long ret = (long) value2.getData() * (long) value1.getData();
 
                     logger.info("执行指令: LMUL，运行结果: " + ret);
 
@@ -1185,7 +1188,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    float ret = (float)value2.getData() * (float)value1.getData();
+                    float ret = (float) value2.getData() * (float) value1.getData();
 
                     logger.info("执行指令: FSUB，运行结果: " + ret);
 
@@ -1219,7 +1222,45 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    int ret = (int)value2.getData() / (int)value1.getData();
+                    // 处理除0
+                    if (0 == value1.getVal()) {
+                        // 判断这个异常是不是在try catch中
+                        CodeAttributeInfo.ExceptionItem exceptionItem = codeAttributeInfo.findExceptionHandle(code.current());
+                        if (null != exceptionItem) {
+                            logger.info("\t 创建异常处理对象");
+
+                            String className = method.getBelongKlass().getConstantPool().getClassName(exceptionItem.getCatchType());
+
+                            try {
+                                Class clazz = Class.forName(className.replace('/', '.'));
+                                Constructor constructor = clazz.getConstructor(String.class);
+
+                                Object o = constructor.newInstance("/ by zero");
+
+                                frame.getStack().push(new StackValue(BasicType.T_OBJECT, o));
+
+                                logger.info("\t 跳转");
+
+                                code.setIndex(exceptionItem.getHandlerPc());
+
+                                continue;
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                            } catch (NoSuchMethodException e) {
+                                e.printStackTrace();
+                            } catch (InvocationTargetException e) {
+                                e.printStackTrace();
+                            } catch (InstantiationException e) {
+                                e.printStackTrace();
+                            } catch (IllegalAccessException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            throw new ArithmeticException("/ by zero");
+                        }
+                    }
+
+                    int ret = (int) value2.getData() / (int) value1.getData();
 
                     logger.info("\t 执行指令: IDIV，运行结果: " + ret);
 
@@ -1239,7 +1280,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    long ret = (long)value2.getData() / (long)value1.getData();
+                    long ret = (long) value2.getData() / (long) value1.getData();
 
                     logger.info("执行指令: LDIV，运行结果: " + ret);
 
@@ -1259,7 +1300,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    float ret = (float)value2.getData() / (float)value1.getData();
+                    float ret = (float) value2.getData() / (float) value1.getData();
 
                     logger.info("执行指令: FDIV，运行结果: " + ret);
 
@@ -1293,7 +1334,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    int ret = (int)value2.getData() % (int)value1.getData();
+                    int ret = (int) value2.getData() % (int) value1.getData();
 
                     logger.info("\t 执行指令: IREM，运行结果: " + ret);
 
@@ -1313,7 +1354,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    long ret = (long)value2.getData() % (long)value1.getData();
+                    long ret = (long) value2.getData() % (long) value1.getData();
 
                     logger.info("执行指令: LREM，运行结果: " + ret);
 
@@ -1333,7 +1374,7 @@ public class BytecodeInterpreter extends StackObj {
                         throw new Error("不匹配的数据类型");
                     }
 
-                    float ret = (float)value2.getData() % (float)value1.getData();
+                    float ret = (float) value2.getData() % (float) value1.getData();
 
                     logger.info("执行指令: FREM，运行结果: " + ret);
 

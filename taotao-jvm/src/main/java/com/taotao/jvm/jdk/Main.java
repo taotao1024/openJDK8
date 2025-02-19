@@ -15,7 +15,7 @@ public class Main {
 
     public static void startJVM() {
         String klass_1 = "com.taotao.jvm.example.HelloWorld";
-        String klass_2 = "com.taotao.jvm.example.lamdba.Lamdba";
+        String klass_2 = "com.taotao.jvm.example.lamdba.TestLamda";
 
         // 通过AppClassLoader加载main函数所在的类
         InstanceKlass mainKlass = BootClassLoader.loadMainKlass(klass_2);

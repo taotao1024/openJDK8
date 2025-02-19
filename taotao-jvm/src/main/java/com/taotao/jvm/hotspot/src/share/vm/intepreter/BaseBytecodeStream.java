@@ -95,4 +95,8 @@ public class BaseBytecodeStream extends StackObj {
     public void inc(int step) {
         index +=  step;
     }
+
+    public int current() {
+        return index;
+    }
 }
