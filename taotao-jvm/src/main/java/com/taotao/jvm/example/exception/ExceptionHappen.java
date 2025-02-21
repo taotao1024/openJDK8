@@ -18,7 +18,7 @@ public class ExceptionHappen {
 
     public static void t2(boolean b) throws FileAlreadyExistsException {
         if (b) {
-            throw new FileAlreadyExistsException("ziya.txt");
+            throw new FileAlreadyExistsException("Exception.txt");
         }
     }
 }

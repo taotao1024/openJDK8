@@ -3793,12 +3793,15 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
   cfs->guarantee_more(8, CHECK_(nullHandle));  // magic, major, minor
   // Magic value
+  // 解析魔数
   u4 magic = cfs->get_u4_fast();
+  // 验证魔数
   guarantee_property(magic == JAVA_CLASSFILE_MAGIC,
                      "Incompatible magic value %u in class file %s",
                      magic, CHECK_(nullHandle));
 
   // Version numbers
+  // 解析次版本号与主版本号
   u2 minor_version = cfs->get_u2_fast();
   u2 major_version = cfs->get_u2_fast();
 
@@ -3841,7 +3844,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
     return nullHandle;
   }
-
+  // 保存到ClassFileParser实例的相关属性中
   _major_version = major_version;
   _minor_version = minor_version;
 
@@ -3859,18 +3862,22 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
   // Access flags
   AccessFlags access_flags;
+  // 获取访问标识
+  // 与JVM_RECOGNIZED_CLASS_MODIFIERS进行与运算操作的目的是过滤掉一些非法的访问标识
   jint flags = cfs->get_u2_fast() & JVM_RECOGNIZED_CLASS_MODIFIERS;
 
   if ((flags & JVM_ACC_INTERFACE) && _major_version < JAVA_6_VERSION) {
     // Set abstract bit for old class files for backward compatibility
     flags |= JVM_ACC_ABSTRACT;
   }
+  // 验证访问标识的合法性
   verify_legal_class_modifiers(flags, CHECK_(nullHandle));
   access_flags.set_flags(flags);
 
   // This class and superclass
+  // 类索引 类索引指向常量池中类型为CONSTANT_Class_info的类描述符
   u2 this_class_index = cfs->get_u2_fast();
-  check_property(
+  check_property(x
     valid_cp_range(this_class_index, cp_size) &&
       cp->tag_at(this_class_index).is_unresolved_klass(),
     "Invalid this class index %u in constant pool in class file %s",

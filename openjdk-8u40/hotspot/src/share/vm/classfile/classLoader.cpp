@@ -1125,6 +1125,8 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
   // 如果找到了目标Class文件，则加载并解析
   if (stream != NULL) {
     // class file found, parse it
+    // 创建ClassFileParser实例，解析过程中得到的Class元
+	// 信息将暂时保存到此实例的相关属性中
     ClassFileParser parser(stream);
     // 每个类加载器都对应一个ClassLoaderData实例
     // 通过ClassLoaderData::the_null_class_loader_data()函数获取引导类加载器对应的ClassLoaderData实例。
@@ -1132,6 +1134,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
     Handle protection_domain;
     TempNewSymbol parsed_name = NULL;
     // 加载并解析Class文件，注意此时并未开始连接
+    // hotspot/src/share/vm/classfile/classFileParser.cpp::parseClassFile
     // parseClassFile 函数首先解析Class文件中的 类、字段和常量池等信息，然后将其转换为C++内部的对等表示形式。如：
     // 将类元信息存储在InstanceKlass实例中，
     // 将常量池信息存储在ConstantPool实例中。

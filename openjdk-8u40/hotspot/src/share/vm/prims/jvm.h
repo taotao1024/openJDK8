@@ -1203,7 +1203,10 @@ typedef jint (*check_format_fn_t)(char *class_name,
                                   jint buffer_length,
                                   jboolean measure_only,
                                   jboolean check_relaxed);
-
+/**
+*  JVM_ACC_SUPER标识用来辅助invokespecial指令
+*  JVM_ACC_SYNTHETIC标识是由前端编译器（如Javac等）添加的，表示合成的类型
+*/
 #define JVM_RECOGNIZED_CLASS_MODIFIERS (JVM_ACC_PUBLIC | \
                                         JVM_ACC_FINAL | \
                                         JVM_ACC_SUPER | \
