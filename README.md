@@ -1,7 +1,8 @@
 # openJDK8
 JDK源码学习
 
-JDK 镜像版本-openjdk-8u40-src-b25-10_feb_2015
+JDK 镜像版本: [openjdk-8u40-src-b25-10_feb_2015](https://github.com/baruch2008/openjdk-8u40-src-b25-10_feb_2015)
+apache官方Tag没找到，临时使用该版本。
 
 # [openjdk-8u40](openjdk-8u40)目录结构
 

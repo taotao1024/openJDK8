@@ -534,9 +534,11 @@ Symbol* ConstantPool::klass_name_at(int which) {
   if (entry.is_resolved()) {
     // Already resolved - return entry's name.
     assert(entry.get_klass()->is_klass(), "must be");
+     // 已经连接时，获取指向InstanceKlass实例的指针
     return entry.get_klass()->name();
   } else {
     assert(entry.is_unresolved(), "must be either symbol or klass");
+    // 未连接时，获取指向Symbol实例的指针
     return entry.get_symbol();
   }
 }

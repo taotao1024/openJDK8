@@ -51,6 +51,7 @@
 class StubGenerator: public StubCodeGenerator {
  private:
 
+  // 汇编-函数流
   // Call stubs are used to call Java from C
   //
   // Arguments:

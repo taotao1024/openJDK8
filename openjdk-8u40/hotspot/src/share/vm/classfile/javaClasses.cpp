@@ -487,6 +487,7 @@ void java_lang_String::print(oop java_string, outputStream* st) {
 
 static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
   assert(mirror.not_null() && fd->is_static(), "just checking");
+  // 如果静态字段有初始值，则将此值保存到oop实例中对应的存储静态字段的槽位上
   if (fd->has_initial_value()) {
     BasicType t = fd->field_type();
     switch (t) {
@@ -525,6 +526,7 @@ static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
         }
         break;
       default:
+        // 结束switch语句
         THROW_MSG(vmSymbols::java_lang_ClassFormatError(),
                   "Illegal ConstantValue attribute in class file");
     }
@@ -566,6 +568,8 @@ void java_lang_Class::initialize_mirror_fields(KlassHandle k,
   set_protection_domain(mirror(), protection_domain());
 
   // Initialize static fields
+  // do_local_static_fields()函数会对静态字段进行  初始化
+  // 注意此时传入的是initialize_static_field()函数  指针
   InstanceKlass::cast(k())->do_local_static_fields(&initialize_static_field, mirror, CHECK);
 }
 
@@ -582,13 +586,17 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
   // the mirror.
   if (SystemDictionary::Class_klass_loaded()) {
     // Allocate mirror (java.lang.Class instance)
+    // allocate_instance()函数会计算oop实例所占用的内存大小，然后分配内存空间
+    // 最后创建oop实例，不过在分配内存空间时，会考虑静态变量，所以说Java类的静态变
+    // 量存储在java.lang.Class对象中
+    // 创建表示java.lang.Class的oop实例
     Handle mirror = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK);
 
     // Setup indirection from mirror->klass
     if (!k.is_null()) {
       java_lang_Class::set_klass(mirror(), k());
     }
-
+    // mirror是instanceOop实例，调用mirror->klass()可以获取指向InstanceMirrorKlass实例的指针
     InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
     assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
 
@@ -596,17 +604,22 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
 
     // It might also have a component mirror.  This mirror must already exist.
     // k是ArrayKlass实例
+    // 数组
     if (k->oop_is_array()) {
       Handle comp_mirror;
       // k是TypeArrayKlass实例
+      // 基本类型数组
       if (k->oop_is_typeArray()) {
         BasicType type = TypeArrayKlass::cast(k())->element_type();
+        // oop转换为Handle类型，会调用转换构造函数
         comp_mirror = Universe::java_mirror(type);
       } else {
         // k是ObjArrayKlass实例
+        // 对象类型数组
         assert(k->oop_is_objArray(), "Must be");
         Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
+        // oop转换为Handle类型，会调用转换构造函数
         comp_mirror = element_klass->java_mirror();
       }
       assert(comp_mirror.not_null(), "must have a mirror");

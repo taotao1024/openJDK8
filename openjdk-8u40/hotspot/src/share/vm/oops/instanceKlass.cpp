@@ -1371,7 +1371,9 @@ void InstanceKlass::do_local_static_fields(void f(fieldDescriptor*, Handle, TRAP
 
 void InstanceKlass::do_local_static_fields_impl(instanceKlassHandle this_k,
                              void f(fieldDescriptor* fd, Handle mirror, TRAPS), Handle mirror, TRAPS) {
+  // 通过JavaFieldStream提供的方法迭代遍历InstanceKlass实例中声明的所有字段
   for (JavaFieldStream fs(this_k()); !fs.done(); fs.next()) {
+    // 只处理静态字段，因为只有静态字段的值会保存到java.lang.Class对象中
     if (fs.access_flags().is_static()) {
       fieldDescriptor& fd = fs.field_descriptor();
       f(&fd, mirror, CHECK);

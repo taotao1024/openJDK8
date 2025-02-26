@@ -64,6 +64,7 @@ class CPSlot VALUE_OBJ_CLASS_SPEC {
  public:
   CPSlot(intptr_t ptr): _ptr(ptr) {}
   CPSlot(Klass* ptr): _ptr((intptr_t)ptr) {}
+  // 或1表示还未进行解析
   CPSlot(Symbol* ptr): _ptr((intptr_t)ptr | 1) {}
 
   intptr_t value()   { return _ptr; }
@@ -128,6 +129,7 @@ class ConstantPool : public Metadata {
   CPSlot slot_at(int which) {
     assert(is_within_bounds(which), "index out of bounds");
     // Uses volatile because the klass slot changes without a lock.
+    // 使用 volatile，因为 klass 槽在没有锁的情况下更改。
     volatile intptr_t adr = (intptr_t)OrderAccess::load_ptr_acquire(obj_at_addr_raw(which));
     assert(adr != 0 || which == 0, "cp entry for klass should not be zero");
     return CPSlot(adr);
@@ -343,7 +345,10 @@ class ConstantPool : public Metadata {
 
   // Tag query
 
-  constantTag tag_at(int which) const { return (constantTag)tags()->at_acquire(which); }
+  constantTag tag_at(int which) const {
+    // constantTag是一个操作tag的工具类
+    return (constantTag)tags()->at_acquire(which);
+  }
 
   // Fetching constants
 
@@ -355,6 +360,8 @@ class ConstantPool : public Metadata {
   Symbol* klass_name_at(int which);  // Returns the name, w/o resolving.
 
   Klass* resolved_klass_at(int which) const {  // Used by Compiler
+    // 类索引和父类索引都指向常量池中的JVM_CONSTANT_Class常量池项，所以如果类还没有执
+    // 行连接操作，获取的是指向Symbol实例的指针，如果已经连接，可以获取指向Klass实例的指针。
     guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
     // Must do an acquire here in case another thread resolved the klass
     // behind our back, lest we later load stale values thru the oop.
