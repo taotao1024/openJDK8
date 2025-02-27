@@ -331,6 +331,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   constantPoolHandle nullHandle;
 
   cfs->guarantee_more(3, CHECK_(nullHandle)); // length, first cp tag
+  // 获取常量池大小
   u2 length = cfs->get_u2_fast();
   guarantee_property(
     length >= 1, "Illegal constant pool size %u in class file %s",
@@ -341,6 +342,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   constantPoolHandle cp (THREAD, constant_pool);
 
   // parsing constant pool entries
+  // 解析常量池项
   parse_constant_pool_entries(length, CHECK_(nullHandle));
 
   int index = 1;  // declared outside of loops for portability
