@@ -43,11 +43,13 @@
 #include "runtime/vframe.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
+/**
+* @param length 表示常量池项的数量
+*/
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   // Tags are RW but comment below applies to tags also.
   Array<u1>* tags = MetadataFactory::new_writeable_array<u1>(loader_data, length, 0, CHECK_NULL);
-
+  // 计算创建ConstantPool实例所需要分配的内存大小
   int size = ConstantPool::size(length);
 
   // CDS considerations:

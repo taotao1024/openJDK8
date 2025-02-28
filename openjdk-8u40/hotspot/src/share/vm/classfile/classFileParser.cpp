@@ -94,7 +94,7 @@
 // Extension method support.
 #define JAVA_8_VERSION                    52
 /**
-* 解析常量池
+* 解析常量池项
 */
 void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
   // Use a local copy of ClassFileStream. It helps the C++ compiler to optimize
@@ -336,6 +336,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   guarantee_property(
     length >= 1, "Illegal constant pool size %u in class file %s",
     length, CHECK_(nullHandle));
+  // ConstantPool::allocate()函数创建ConstantPool实例
   ConstantPool* constant_pool = ConstantPool::allocate(_loader_data, length,
                                                         CHECK_(nullHandle));
   _cp = constant_pool; // save in case of errors

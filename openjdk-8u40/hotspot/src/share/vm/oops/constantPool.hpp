@@ -87,8 +87,10 @@ class ConstantPool : public Metadata {
   friend class BytecodeInterpreter;  // Directly extracts an oop in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
  private:
+  // 每个常量池项的类型
   Array<u1>*           _tags;        // the tag array describing the constant pool's contents
   ConstantPoolCache*   _cache;       // 缓存保存解释器运行时信息 hashtable
+  // 拥有当前常量池的类
   InstanceKlass*       _pool_holder; // the corresponding class
   Array<u2>*           _operands;    // for variable-sized (InvokeDynamic) nodes, usually empty
 
@@ -103,6 +105,7 @@ class ConstantPool : public Metadata {
   };
 
   int                  _flags;  // old fashioned bit twiddling
+  // 常量池中含有的常量池项总数
   int                  _length; // number of elements in the array
 
   union {
