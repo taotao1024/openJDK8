@@ -139,17 +139,22 @@ class ObjectMonitor {
   // are simple integers or pointers
   ObjectMonitor() {
     _header       = NULL;
+    // _count 用来记录该线程获取锁的次数
     _count        = 0;
     _waiters      = 0,
     _recursions   = 0;
     _object       = NULL;
+    // _owner 指向持有ObjectMonitor对象的线程
     _owner        = NULL;
+    // 处于wait状态的线程，会被加入到_WaitSet
     _WaitSet      = NULL;
     _WaitSetLock  = 0 ;
+    // 锁的重入次数
     _Responsible  = NULL ;
     _succ         = NULL ;
     _cxq          = NULL ;
     FreeNext      = NULL ;
+    // 处于等待锁block状态的线程，会被加入到该列表
     _EntryList    = NULL ;
     _SpinFreq     = 0 ;
     _SpinClock    = 0 ;
