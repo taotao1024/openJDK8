@@ -3,6 +3,7 @@ synchronized关键字、自定义Lock接口
 ## synchronized关键字
  - synchronized关键字，由JVM实现的单机锁，锁依赖于Java对象里对象头的Mark Word。
    - Mark Word(标记字段)：大小是8个字节。默认存储的是对象的hashCode、锁状态标识以及GC分代年龄。 [Java对象](https://blog.csdn.net/weixin_44817884/article/details/136679299)
+   - 通过模板解析器和C++实现
  - 每个对象自从创建起，都会关联一个锁对象，即Monitor对象【管程\监视器】，[objectMonitor.hpp](../../../openjdk-8u40/hotspot/src/share/vm/runtime/objectMonitor.hpp)。
  - 每个 Java 对象都可以关联一个 Monitor 对象，如果使用 synchronized 给对象上锁（重量级）之后，该对象头的 Mark Word 中就被设置指向 Monitor 对象的指针。
  - Synchronized锁配合Object的wait和notify等方法来实现线程通信
@@ -20,7 +21,10 @@ synchronized关键字、自定义Lock接口
 ### 锁升级
 偏向锁
 轻量级锁
-重量级锁
+重量级锁 mutex
+
+锁在升级的过程中 会过渡到无锁情况
+
 ### Synchronized针对同步代码块和同步方法
  - 同步代码块：
    - 对象头会关联到一个monitor对象。进入一个方法的时候执行monitorEnter(同步代码块的开始位置)，获取当前对象的一个所有权_owner，monitor数值加1，

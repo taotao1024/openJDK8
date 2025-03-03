@@ -374,6 +374,7 @@ class ConstantPool : public Metadata {
 /**
 * This method should only be used with a cpool lock or during parsing or gc
 * 此方法应仅与 cpool lock 一起使用，或者在解析或 gc 期间使用
+* 这个函数就是直接根据class_index取出了指向Symbol的指针
 */
   Symbol* unresolved_klass_at(int which) {     // Temporary until actual use
     Symbol* s = CPSlot((Symbol*)OrderAccess::load_ptr_acquire(obj_at_addr_raw(which))).get_symbol();

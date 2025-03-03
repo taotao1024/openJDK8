@@ -94,7 +94,7 @@
 // Extension method support.
 #define JAVA_8_VERSION                    52
 /**
-* 解析常量池项
+* 解析常量池项解析
 */
 void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
   // Use a local copy of ClassFileStream. It helps the C++ compiler to optimize
@@ -119,12 +119,20 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
   int names_count = 0;
 
   // parsing  Index 0 is unused
+  // index初始化为1，常量池中第0项保留 所以永远是JVM_CONSTANT_Invalid
   for (int index = 1; index < length; index++) {
     // Each of the following case guarantees one more byte in the stream
     // for the following tag or the access_flags following constant pool,
     // so we don't need bounds-check for reading tag.
+    // 所有常量池项的第一个字节都是用来描述常量池项类型的tag属性
     u1 tag = cfs->get_u1_fast();
+    // 获取常量池项中的tag属性值
     switch (tag) {
+      // 解析 JVM_CONSTANT_Class -> CONSTANT_Class_info
+      // CONSTANT_Class_info {
+      // 	u1 tag;
+      // 	u2 name_index;
+      // }
       case JVM_CONSTANT_Class :
         {
           cfs->guarantee_more(3, CHECK);  // name_index, tag/access_flags
@@ -132,22 +140,47 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           _cp->klass_index_at_put(index, name_index);
         }
         break;
+      // 解析 JVM_CONSTANT_Fieldref -> CONSTANT_Fieldref_info
+      // CONSTANT_Fieldref_info {
+      //    u1 tag;
+      //    u2 class_index;
+      //    u2 name_and_type_index;
+      // }
       case JVM_CONSTANT_Fieldref :
         {
           cfs->guarantee_more(5, CHECK);  // class_index, name_and_type_index, tag/access_flags
           u2 class_index = cfs->get_u2_fast();
           u2 name_and_type_index = cfs->get_u2_fast();
+          // 由于ConstantPool数据区的一个槽是一个指针类
+          // 型的宽度，所以至少有32个位，又由于class_index与
+          // name_and_type_index属性的类型为u2，所以使用高16
+          // 位存储name_and_type_index、低16位存储
+          // class_index即可。
+          // field_at_put() --> ((jint) name_and_type_index<<16) | class_index;
           _cp->field_at_put(index, class_index, name_and_type_index);
         }
         break;
+      // 解析 JVM_CONSTANT_Methodref -> CONSTANT_Methodref_info
+      // CONSTANT_Methodref_info {
+      //    u1 tag;
+      //    u2 class_index;
+      //    u2 name_and_type_index;
+      // }
       case JVM_CONSTANT_Methodref :
         {
           cfs->guarantee_more(5, CHECK);  // class_index, name_and_type_index, tag/access_flags
           u2 class_index = cfs->get_u2_fast();
           u2 name_and_type_index = cfs->get_u2_fast();
+          // 调用method_at_put()函数进行存储
           _cp->method_at_put(index, class_index, name_and_type_index);
         }
         break;
+      // 解析 JVM_CONSTANT_InterfaceMethodref -> CONSTANT_InterfaceMethodref_info
+      // CONSTANT_InterfaceMethodref_info {
+      // 	u1 tag;
+      // 	u2 class_index;
+      // 	u2 name_and_type_index;
+      // }
       case JVM_CONSTANT_InterfaceMethodref :
         {
           cfs->guarantee_more(5, CHECK);  // class_index, name_and_type_index, tag/access_flags
@@ -156,6 +189,11 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           _cp->interface_method_at_put(index, class_index, name_and_type_index);
         }
         break;
+      // 解析 JVM_CONSTANT_String -> CONSTANT_String_info
+      // CONSTANT_String_info {
+      //    u1 tag;
+      //    u2 string_index;
+      // }
       case JVM_CONSTANT_String :
         {
           cfs->guarantee_more(3, CHECK);  // string_index, tag/access_flags
@@ -163,7 +201,18 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           _cp->string_index_at_put(index, string_index);
         }
         break;
+      // CONSTANT_MethodHandle_info -> CONSTANT_MethodHandle_info
+      // CONSTANT_MethodHandle_info {
+      //    u1 tag;
+      //    u1 reference_kind;
+      //    u2 reference_index;
+      // }
       case JVM_CONSTANT_MethodHandle :
+      // JVM_CONSTANT_MethodType -> CONSTANT_MethodType_info
+      // CONSTANT_MethodType_info {
+      //    u1 tag;
+      //    u2 descriptor_index;
+      // }
       case JVM_CONSTANT_MethodType :
         if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
           classfile_parse_error(
@@ -188,6 +237,13 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           ShouldNotReachHere();
         }
         break;
+      // Lamdba表达式会用到 InvokeDynamic 指令
+      // JVM_CONSTANT_InvokeDynamic -> CONSTANT_InvokeDynamic_info
+      // CONSTANT_InvokeDynamic_info {
+      //    u1 tag;
+      //    u2 bootstrap_method_attr_index;
+      //    u2 name_and_type_index;
+      // }
       case JVM_CONSTANT_InvokeDynamic :
         {
           if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
@@ -208,6 +264,11 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           _cp->invoke_dynamic_at_put(index, bootstrap_specifier_index, name_and_type_index);
         }
         break;
+      // 解析 JVM_CONSTANT_Integer -> CONSTANT_Integer_info
+      // CONSTANT_Integer_info {
+      //    u1 tag;
+      //    u4 bytes;
+      // }
       case JVM_CONSTANT_Integer :
         {
           cfs->guarantee_more(5, CHECK);  // bytes, tag/access_flags
@@ -215,6 +276,11 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           _cp->int_at_put(index, (jint) bytes);
         }
         break;
+      // 解析 JVM_CONSTANT_Float -> CONSTANT_Float_info
+      // CONSTANT_Float_info {
+      //    u1 tag;
+      //    u4 bytes;
+      // }
       case JVM_CONSTANT_Float :
         {
           cfs->guarantee_more(5, CHECK);  // bytes, tag/access_flags
@@ -409,10 +475,13 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         break;
       case JVM_CONSTANT_ClassIndex :
         {
+          // 调用klass_index_at()函数获取ConstantPool数据区index槽位上存储的值
           int class_index = cp->klass_index_at(index);
           check_property(valid_symbol_at(class_index),
                  "Invalid constant pool index %u in class file %s",
                  class_index, CHECK_(nullHandle));
+          // 通过symbol_at(class_index)函数指针后，
+          // 调用unresolved_klass_at_put()函数更新槽位上的值为指向Symbol实例的指针
           cp->unresolved_klass_at_put(index, cp->symbol_at(class_index));
         }
         break;
