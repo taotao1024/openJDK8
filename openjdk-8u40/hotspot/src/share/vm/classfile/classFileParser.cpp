@@ -112,6 +112,7 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
   Handle class_loader(THREAD, _loader_data->class_loader());
 
   // Used for batching symbol allocations.
+  // 以下变量辅助进行Symbol实例的批处理
   const char* names[SymbolTable::symbol_alloc_batch_size];
   int lengths[SymbolTable::symbol_alloc_batch_size];
   int indices[SymbolTable::symbol_alloc_batch_size];
@@ -288,6 +289,12 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           _cp->float_at_put(index, *(jfloat*)&bytes);
         }
         break;
+      // 解析 JVM_CONSTANT_Long -> CONSTANT_Long_info
+      // CONSTANT_Long_info {
+      //    u1 tag;
+      //    u4 high_bytes;
+      //    u4 low_bytes;
+      // }
       case JVM_CONSTANT_Long :
         // A mangled type might cause you to overrun allocated memory
         guarantee_property(index+1 < length,
@@ -300,6 +307,12 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
         }
         index++;   // Skip entry following eigth-byte constant, see JVM book p. 98
         break;
+      // 解析 JVM_CONSTANT_Double -> CONSTANT_Double_info
+      // CONSTANT_Double_info {
+      //    u1 tag;
+      //    u4 high_bytes;
+      //    u4 low_bytes;
+      // }
       case JVM_CONSTANT_Double :
         // A mangled type might cause you to overrun allocated memory
         guarantee_property(index+1 < length,
@@ -312,6 +325,12 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
         }
         index++;   // Skip entry following eigth-byte constant, see JVM book p. 98
         break;
+      // 解析 JVM_CONSTANT_NameAndType -> CONSTANT_NameAndType_info
+      // CONSTANT_NameAndType_info {
+      //    u1 tag;
+      //    u2 name_index;
+      //    u2 descriptor_index;
+      // }
       case JVM_CONSTANT_NameAndType :
         {
           cfs->guarantee_more(5, CHECK);  // name_index, signature_index, tag/access_flags
@@ -320,6 +339,12 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
           _cp->name_and_type_at_put(index, name_index, signature_index);
         }
         break;
+      // JVM_CONSTANT_Utf8 -> CONSTANT_Utf8_info
+      // CONSTANT_Utf8_info {
+      //    u1 tag;
+      //    u2 length;
+      //    u1 bytes[length];
+      // }
       case JVM_CONSTANT_Utf8 :
         {
           cfs->guarantee_more(2, CHECK);  // utf8_length
@@ -370,6 +395,11 @@ void ClassFileParser::parse_constant_pool_entries(int length, TRAPS) {
   }
 
   // Allocate the remaining symbols
+  // 进行Symbol实例的批处理
+  // 字符串通常都会表示为Symbol
+  // 实例，这样可以通过字典表来存储字符串，对于两个
+  // 相同的字符串来说，完全可以使用同一个Symbol实例
+  // 来表示。
   if (names_count > 0) {
     SymbolTable::new_symbols(_loader_data, _cp, names_count, names, lengths, indices, hashValues, CHECK);
   }
@@ -1085,11 +1115,11 @@ void ClassFileParser::parse_field_attributes(u2 attributes_count,
 // Field allocation types. Used for computing field offsets.
 
 enum FieldAllocationType {
-  STATIC_OOP,           // Oops
-  STATIC_BYTE,          // Boolean, Byte, char
-  STATIC_SHORT,         // shorts
-  STATIC_WORD,          // ints
-  STATIC_DOUBLE,        // aligned long or double
+  STATIC_OOP,           // Oops 引用类型
+  STATIC_BYTE,          // Boolean, Byte, char 字节类型
+  STATIC_SHORT,         // shorts 短整型
+  STATIC_WORD,          // ints 双字类型
+  STATIC_DOUBLE,        // aligned long or double 浮点类型
   NONSTATIC_OOP,
   NONSTATIC_BYTE,
   NONSTATIC_SHORT,
@@ -1104,6 +1134,7 @@ static FieldAllocationType _basic_type_to_atype[2 * (T_CONFLICT + 1)] = {
   BAD_ALLOCATION_TYPE, // 1
   BAD_ALLOCATION_TYPE, // 2
   BAD_ALLOCATION_TYPE, // 3
+  // ---------------------------------------------
   NONSTATIC_BYTE ,     // T_BOOLEAN     =  4,
   NONSTATIC_SHORT,     // T_CHAR        =  5,
   NONSTATIC_WORD,      // T_FLOAT       =  6,
@@ -1114,6 +1145,7 @@ static FieldAllocationType _basic_type_to_atype[2 * (T_CONFLICT + 1)] = {
   NONSTATIC_DOUBLE,    // T_LONG        = 11,
   NONSTATIC_OOP,       // T_OBJECT      = 12,
   NONSTATIC_OOP,       // T_ARRAY       = 13,
+  // ---------------------------------------------
   BAD_ALLOCATION_TYPE, // T_VOID        = 14,
   BAD_ALLOCATION_TYPE, // T_ADDRESS     = 15,
   BAD_ALLOCATION_TYPE, // T_NARROWOOP   = 16,
@@ -1124,6 +1156,7 @@ static FieldAllocationType _basic_type_to_atype[2 * (T_CONFLICT + 1)] = {
   BAD_ALLOCATION_TYPE, // 1
   BAD_ALLOCATION_TYPE, // 2
   BAD_ALLOCATION_TYPE, // 3
+  // ---------------------------------------------
   STATIC_BYTE ,        // T_BOOLEAN     =  4,
   STATIC_SHORT,        // T_CHAR        =  5,
   STATIC_WORD,         // T_FLOAT       =  6,
@@ -1134,6 +1167,7 @@ static FieldAllocationType _basic_type_to_atype[2 * (T_CONFLICT + 1)] = {
   STATIC_DOUBLE,       // T_LONG        = 11,
   STATIC_OOP,          // T_OBJECT      = 12,
   STATIC_OOP,          // T_ARRAY       = 13,
+  // ---------------------------------------------
   BAD_ALLOCATION_TYPE, // T_VOID        = 14,
   BAD_ALLOCATION_TYPE, // T_ADDRESS     = 15,
   BAD_ALLOCATION_TYPE, // T_NARROWOOP   = 16,
@@ -1141,7 +1175,12 @@ static FieldAllocationType _basic_type_to_atype[2 * (T_CONFLICT + 1)] = {
   BAD_ALLOCATION_TYPE, // T_NARROWKLASS = 18,
   BAD_ALLOCATION_TYPE, // T_CONFLICT    = 19,
 };
-
+/**
+* 数进行类型转换
+* 而HotSpot VM中只有FieldAllocationType枚举类中定义的5种类型，因此要对Java类型进行转换后再统计。
+* 调用basic_type_to_atype()函数进行类型转换。
+*
+*/
 static FieldAllocationType basic_type_to_atype(bool is_static, BasicType type) {
   assert(type >= T_BOOLEAN && type < T_VOID, "only allowable values");
   FieldAllocationType result = _basic_type_to_atype[type + (is_static ? (T_CONFLICT + 1) : 0)];
@@ -1154,11 +1193,13 @@ class FieldAllocationCount: public ResourceObj {
   u2 count[MAX_FIELD_ALLOCATION_TYPE];
 
   FieldAllocationCount() {
+    // MAX_FIELD_ALLOCATION_TYPE是定义在FieldAllocationType中的枚举常量，值
+    // 为10初始化count数组中的值为0
     for (int i = 0; i < MAX_FIELD_ALLOCATION_TYPE; i++) {
       count[i] = 0;
     }
   }
-
+  // 更新对应类型字段的总数量
   FieldAllocationType update(bool is_static, BasicType type) {
     FieldAllocationType atype = basic_type_to_atype(is_static, type);
     // Make sure there is no overflow with injected fields.
@@ -3938,6 +3979,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   // Do not restrict it to jdk1.0 or jdk1.1 to maintain backward compatibility (4982376)
   _relax_verify = Verifier::relax_verify_for(class_loader());
 
+  // TODO ***************************** 核心 *****************************
   // Constant pool 常亮池解析
   constantPoolHandle cp = parse_constant_pool(CHECK_(nullHandle));
 
@@ -4041,6 +4083,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     u2 java_fields_count = 0;
     // Fields (offsets are filled in later) 字段解析
     FieldAllocationCount fac;
+    // TODO ***************************** 核心 *****************************
+    // parse_fields() 函数解析字段
     Array<u2>* fields = parse_fields(class_name,
                                      access_flags.is_interface(),
                                      &fac, &java_fields_count,
