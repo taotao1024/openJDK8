@@ -3131,6 +3131,8 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"non-static oop maps: ");
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
+  // 打印出OopMapBlock的数量
+  st->print(" %d ",nonstatic_oop_map_count())
   while (map < end_map) {
     st->print("%d-%d ", map->offset(), map->offset() + heapOopSize*(map->count() - 1));
     map++;

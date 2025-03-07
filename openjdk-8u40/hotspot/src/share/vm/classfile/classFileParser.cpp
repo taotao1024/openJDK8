@@ -4477,6 +4477,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
   // Clear class if no error has occurred so destructor doesn't deallocate it
   _klass = NULL;
+  this_klass->print(); // this_klass的类型为instanceKlassHandle
   return this_klass;
 }
 
@@ -4608,6 +4609,7 @@ void ClassFileParser::fill_oop_maps(instanceKlassHandle k,
   const unsigned int super_count = super ? super->nonstatic_oop_map_count() : 0;
   if (super_count > 0) {
     // Copy maps from superklass
+    // 将父类的OopMapBlock信息复制到当前的InstanceKlass实例中
     OopMapBlock* super_oop_map = super->start_of_nonstatic_oop_maps();
     for (unsigned int i = 0; i < super_count; ++i) {
       *this_oop_map++ = *super_oop_map++;
@@ -4619,14 +4621,22 @@ void ClassFileParser::fill_oop_maps(instanceKlassHandle k,
       // The counts differ because there is no gap between superklass's last oop
       // field and the first local oop field.  Extend the last oop map copied
       // from the superklass instead of creating new one.
+      // 扩展从父类复制的最后一个OopMapBlock，这样子类就不需要自己再创建一个新的
+      // OopMapBlock，OopMapBlock的数量就会少1
       nonstatic_oop_map_count--;
       nonstatic_oop_offsets++;
       this_oop_map--;
+      // 更新父类复制的OopMapBlock的_count属性
+      // 如果能扩展父类的
+      // 最后一个OopMapBlock代表父类和子类连续的对象类型
+      // 变量区域，则不需要为当前类中定义的对象类型变量
+      // 新创建一个OopMapBlock，否则就新创建一个。
       this_oop_map->set_count(this_oop_map->count() + *nonstatic_oop_counts++);
       this_oop_map++;
     }
 
     // Add new map blocks, fill them
+    // 当前类需要自己创建一个OopMapBlock
     while (nonstatic_oop_map_count-- > 0) {
       this_oop_map->set_offset(*nonstatic_oop_offsets++);
       this_oop_map->set_count(*nonstatic_oop_counts++);
