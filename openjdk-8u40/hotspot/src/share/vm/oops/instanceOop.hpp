@@ -39,6 +39,8 @@ class instanceOopDesc : public oopDesc {
   static int base_offset_in_bytes() {
     // offset computation code breaks if UseCompressedClassPointers
     // only is true
+    // klass_gap_offset_in_bytes() 开启指针压缩后计算的值为12
+    // sizeof(instanceOopDesc)     在64位平台上计算的值为16
     return (UseCompressedOops && UseCompressedClassPointers) ?
              klass_gap_offset_in_bytes() :
              sizeof(instanceOopDesc);

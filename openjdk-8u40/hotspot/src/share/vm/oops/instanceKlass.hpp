@@ -123,14 +123,15 @@ class OopMapBlock VALUE_OBJ_CLASS_SPEC {
   void set_count(uint count) { _count = count; }
 
   // sizeof(OopMapBlock) in HeapWords.
+  // 计算OopMapBlock本身占用的内存空间，在64位系统中为一个字
   static const int size_in_words() {
     return align_size_up(int(sizeof(OopMapBlock)), HeapWordSize) >>
       LogHeapWordSize;
   }
 
  private:
-  int  _offset;
-  uint _count;
+  int  _offset; // 第一个所引用的oop相对于当前oop地址的偏移量
+  uint _count;  // 有count个连续存放的oop
 };
 
 struct JvmtiCachedClassFileData;

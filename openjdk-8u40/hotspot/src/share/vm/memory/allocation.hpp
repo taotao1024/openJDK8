@@ -422,6 +422,7 @@ protected:
   // Fast allocate in the arena.  Common case is: pointer test + increment.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
+    // 进行对齐操作
     x = ARENA_ALIGN(x);
     debug_only(if (UseMallocOnly) return malloc(x);)
     if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode))
