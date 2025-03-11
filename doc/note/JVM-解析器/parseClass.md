@@ -24,3 +24,25 @@ Class文件数据结构如下
      合数据类型，以“_info”结尾，用于描述有层次
      关系的复合结构的数据，整个Class文件本质上是
      一张表。
+## 类方法解析
+
+HotSpot VM通过Method与ConstMethod类保存方法的元信息。
+ - Method用来保存方法中的一些常见信息，如运行时的解释入口和编译入口。
+   - method没有子类，继承链如下：Method、Metadata、MetaspaceObj
+ - ConstMethod用来保存方法中的不可变信息，如Java方法的字节码。
+
+Method [method.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/method.cpp)
+ - Method实例表示一个Java方法，因为一个应用有
+   成千上万个方法，所以保证Method类在内存中的布局
+   紧凑非常重要。为了方便回收垃圾，Method把所有的
+   指针变量和方法都放在了Method内存布局的前面。
+ - Java方法本身的不可变数据如字节码等用
+   ConstMethod表示，可变数据如Profile统计的性能数
+   据等用MethodData表示，它们都可以在Method中通过
+   指针访问
+ - 如果是本地方法，Method实例的内存布局的最后
+   是native_function和signature_handler属性，按照
+   解释器的要求，这两个属性必须在固定的偏移处。
+
+ConstMethod [constMethod.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/constMethod.cpp)
+ - 保存方法中不可变部分的信息，如方法的字节码和方法参数的大小等。

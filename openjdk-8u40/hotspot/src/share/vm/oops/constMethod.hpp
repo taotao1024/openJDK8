@@ -203,19 +203,21 @@ private:
   // loads and stores.  This value may updated and read without a lock by
   // multiple threads, so is volatile.
   volatile uint64_t _fingerprint;
-
+  // 保存对从常量池的索引
   ConstantPool*     _constants;                  // Constant pool
 
   // Raw stackmap data for the method
   Array<u1>*        _stackmap_data;
 
   int               _constMethod_size;
+  // 访问标识符
   u2                _flags;
 
   // Size of Java bytecodes allocated immediately after Method*.
   u2                _code_size;
   u2                _name_index;                 // Method name (index in constant pool)
   u2                _signature_index;            // Method signature (index in constant pool)
+  // 对于方法来说，这是唯一ID，这个ID的值通常是methods数据下表索引。
   u2                _method_idnum;               // unique identification number for the method within the class
                                                  // initially corresponds to the index into the methods array.
                                                  // but this may change with redefinition
@@ -359,6 +361,7 @@ public:
 
   // linenumber table - note that length is unknown until decompression,
   // see class CompressedLineNumberReadStream.
+  // 压缩的代码行号表
   u_char* compressed_linenumber_table() const;         // not preserved by gc
   u2* generic_signature_index_addr() const;
   u2* checked_exceptions_length_addr() const;
@@ -367,22 +370,27 @@ public:
   u2* method_parameters_length_addr() const;
 
   // checked exceptions
+  // 异常检查表
   int checked_exceptions_length() const;
   CheckedExceptionElement* checked_exceptions_start() const;
 
   // localvariable table
+  // 本地变量表
   int localvariable_table_length() const;
   LocalVariableTableElement* localvariable_table_start() const;
 
   // exception table
+  // 异常表
   int exception_table_length() const;
   ExceptionTableElement* exception_table_start() const;
 
   // method parameters table
+  // 方法参数
   int method_parameters_length() const;
   MethodParametersElement* method_parameters_start() const;
 
   // method annotations
+  // 方法注解
   bool has_method_annotations() const
     { return (_flags & _has_method_annotations) != 0; }
 

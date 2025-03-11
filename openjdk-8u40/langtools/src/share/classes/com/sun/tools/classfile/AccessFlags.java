@@ -46,14 +46,14 @@ public class AccessFlags {
     public static final int ACC_SUPER         = 0x0020; // class
     public static final int ACC_SYNCHRONIZED  = 0x0020; //                      method
     public static final int ACC_VOLATILE      = 0x0040; //               field
-    public static final int ACC_BRIDGE        = 0x0040; //                      method
+    public static final int ACC_BRIDGE        = 0x0040; //                      method      由Java等编译器生成的桥接方法
     public static final int ACC_TRANSIENT     = 0x0080; //               field
-    public static final int ACC_VARARGS       = 0x0080; //                      method
+    public static final int ACC_VARARGS       = 0x0080; //                      method      方法参数中含有变长参数
     public static final int ACC_NATIVE        = 0x0100; //                      method
     public static final int ACC_INTERFACE     = 0x0200; // class, inner
     public static final int ACC_ABSTRACT      = 0x0400; // class, inner,        method
     public static final int ACC_STRICT        = 0x0800; //                      method
-    public static final int ACC_SYNTHETIC     = 0x1000; // class, inner, field, method
+    public static final int ACC_SYNTHETIC     = 0x1000; // class, inner, field, method      由Java等编译器生成的桥接方法
     public static final int ACC_ANNOTATION    = 0x2000; // class, inner
     public static final int ACC_ENUM          = 0x4000; // class, inner, field
     public static final int ACC_MANDATED      = 0x8000; // class, inner, field, method
