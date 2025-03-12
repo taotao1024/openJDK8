@@ -96,6 +96,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
   set_dont_inline(false);
   set_method_data(NULL);
   clear_method_counters();
+  // 表示vtable
   set_vtable_index(Method::garbage_vtable_index);
 
   // Fix and bury in Method*

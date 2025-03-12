@@ -4259,7 +4259,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     int num_miranda_methods = 0;
 
     GrowableArray<Method*> all_mirandas(20);
-
+    // 计算虚函数表的大小和mirandas方法的数量
+    // openjdk/hotspot/src/share/vm/oops/klassVtable.cpp
     klassVtable::compute_vtable_size_and_num_mirandas(
         &vtable_size, &num_miranda_methods, &all_mirandas, super_klass(), methods,
         access_flags, class_loader, class_name, local_interfaces,

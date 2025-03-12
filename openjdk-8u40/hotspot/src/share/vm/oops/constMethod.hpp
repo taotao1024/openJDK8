@@ -458,6 +458,7 @@ public:
       memcpy(code_base(), code, code_size());
     }
   }
+  // 存储在ConstMethod本身占用的内存之后
   address code_base() const            { return (address) (this+1); }
   address code_end() const             { return code_base() + code_size(); }
   bool    contains(address bcp) const  { return code_base() <= bcp

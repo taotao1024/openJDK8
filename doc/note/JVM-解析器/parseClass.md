@@ -46,3 +46,12 @@ Method [method.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/method.cpp)
 
 ConstMethod [constMethod.cpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/constMethod.cpp)
  - 保存方法中不可变部分的信息，如方法的字节码和方法参数的大小等。
+
+klassVtable虚函数表
+ - klassVtable与klassItable类用来实现Java方法
+   的多态，也可以称为动态绑定，是指在应用执行期间
+   通过判断接收对象的实际类型，然后调用对应的方
+   法。[klassVtable.hpp](../../../openjdk-8u40/hotspot/src/share/vm/oops/klassVtable.hpp)
+ - C++为了实现多态，在对象中嵌入了虚函数表
+   vtable，通过虚函数表来实现运行期的方法分派，
+   Java也通过类似的虚函数表实现Java方法的动态分发

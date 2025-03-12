@@ -2680,15 +2680,18 @@ bool InstanceKlass::is_same_class_package(oop class_loader1, Symbol* class_name1
 // note that the InstanceKlass of the method in the targetclassname has not always been created yet
 bool InstanceKlass::is_override(methodHandle super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS) {
    // Private methods can not be overridden
+   // 私有方法不能被覆写
    if (super_method->is_private()) {
      return false;
    }
    // If super method is accessible, then override
+   // 父类中的public和protected方法一定可以被覆写
    if ((super_method->is_protected()) ||
        (super_method->is_public())) {
      return true;
    }
    // Package-private methods are not inherited outside of package
+   // default访问权限的方法必须要和目标方法处在同一个包之下
    assert(super_method->is_package_private(), "must be package private");
    return(is_same_class_package(targetclassloader(), targetclassname));
 }
