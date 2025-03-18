@@ -63,6 +63,7 @@ class klassVtable : public ResourceObj {
   };
 
  public:
+  // 构造函数
   klassVtable(KlassHandle h_klass, void* base, int length) : _klass(h_klass) {
     _tableOffset = (address)base - (address)h_klass(); _length = length;
   }
