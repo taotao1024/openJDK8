@@ -55,3 +55,19 @@ klassVtable虚函数表
  - C++为了实现多态，在对象中嵌入了虚函数表
    vtable，通过虚函数表来实现运行期的方法分派，
    Java也通过类似的虚函数表实现Java方法的动态分发
+
+klassItable虚函数表
+ - klassItable与klassVtable的作用类似，都是为
+   了实现Java方法运行时的多态，但通过klassItable可
+   以查找到某个接口对应的实现方法。
+ - Java的itable是Java接口函数表，可以方便查找
+   某个接口对应的实现方法。itable的结构比vtable复
+   杂，除了记录方法地址之外还要记录该方法所属的接
+   口类Klass。
+ - itable表由偏移表itableOffset和
+   方法表itableMethod两个表组成，这两个表的长度是
+   不固定的，即长度不一样。每个偏移表itableOffset
+   保存的是类实现的一个接口Klass和该接口方法表所在
+   的偏移位置；方法表itableMethod保存的是实现的接
+   口方法。在初始化itable时，HotSpot VM将类实现的
+   接口及实现的方法填写在上述两张表中。
