@@ -4005,7 +4005,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   // Magic value
   // 解析魔数
   u4 magic = cfs->get_u4_fast();
-  // 验证魔数
+  // 验证魔数 magic的值必须为0xCAFEBABY
   guarantee_property(magic == JAVA_CLASSFILE_MAGIC,
                      "Incompatible magic value %u in class file %s",
                      magic, CHECK_(nullHandle));
@@ -4222,7 +4222,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       if (super_klass->has_default_methods()) {
         has_default_methods = true;
       }
-
+      // 保证父类不为接口
       if (super_klass->is_interface()) {
         ResourceMark rm(THREAD);
         Exceptions::fthrow(
@@ -4235,6 +4235,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
         return nullHandle;
       }
       // Make sure super class is not final
+      // 保证父类不为final类
       if (super_klass->is_final()) {
         THROW_MSG_(vmSymbols::java_lang_VerifyError(), "Cannot inherit from final class", nullHandle);
       }

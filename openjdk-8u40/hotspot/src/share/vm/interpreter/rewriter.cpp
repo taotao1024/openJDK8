@@ -37,8 +37,10 @@
 // Marks entries in CP which require additional processing.
 void Rewriter::compute_index_maps() {
   const int length  = _pool->length();
+  // 初始化Rewriter类中保存映射关系的一些变量
   init_maps(length);
   bool saw_mh_symbol = false;
+  // 通过循环查找常量池中特定的项，为这些项建立常量池缓存项索引
   for (int i = 0; i < length; i++) {
     int tag = _pool->tag_at(i).value();
     switch (tag) {
@@ -356,6 +358,8 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
       // directly. Some more complicated bytecodes will report
       // a length of zero, meaning we need to make another method
       // call to calculate the length.
+      // 获取字节码指令的长度，有些字节码指令的长度无法通过length_for()函数来计算，
+      // 因此会返回0，需要进一步调用length_at()函数来获取
       bc_length = Bytecodes::length_for(c);
       if (bc_length == 0) {
         bc_length = Bytecodes::length_at(method, bcp);
@@ -363,6 +367,7 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
         // length_at will put us at the bytecode after the one modified
         // by 'wide'. We don't currently examine any of the bytecodes
         // modified by wide, but in case we do in the future...
+        // 对于wild指令的处理逻辑
         if (c == Bytecodes::_wide) {
           prefix_length = 1;
           c = (Bytecodes::Code)bcp[1];
@@ -370,7 +375,7 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
       }
 
       assert(bc_length != 0, "impossible bytecode length");
-
+      // 对部分字节码指令进行重写
       switch (c) {
         case Bytecodes::_lookupswitch   : {
 #ifndef CC_INTERP
@@ -457,6 +462,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   assert(_pool->cache() == NULL, "constant pool cache must not be set yet");
 
   // determine index maps for Method* rewriting
+  // 第1部分：生成常量池缓存项索引
   compute_index_maps();
 
   if (RegisterFinalizersAtInit && _klass->name() == vmSymbols::java_lang_Object()) {
@@ -477,6 +483,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   }
 
   // rewrite methods, in two passes
+  // 第2部分：重写部分字节码指令
   int len = _methods->length();
   bool invokespecial_error = false;
 
@@ -513,6 +520,8 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
 {
 
   // Rewrite bytecodes - exception here exits.
+  // 第1部分：生成常量池缓存项索引
+  // 第2部分：重写部分字节码指令
   rewrite_bytecodes(CHECK);
 
   // Stress restoring bytecodes
@@ -522,6 +531,7 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Me
   }
 
   // allocate constant pool cache, now that we've seen all the bytecodes
+  // 第3部分：创建常量池缓存
   make_constant_pool_cache(THREAD);
 
   // Restore bytecodes to their unrewritten state if there are exceptions

@@ -871,6 +871,7 @@ void Method::unlink_method() {
 void Method::link_method(methodHandle h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
+  // 当_i2i_entry属性的值不为空时，表示方法已经连接过，因为此方法可能会重复调用
   if (_i2i_entry != NULL) return;
 
   assert(_adapter == NULL, "init'd to NULL" );
@@ -878,6 +879,8 @@ void Method::link_method(methodHandle h_method, TRAPS) {
 
   // Setup interpreter entrypoint
   assert(this == h_method(), "wrong h_method()" );
+  // 为解释执行设置入口，在初始化时，将Method中的 _i2i_entry和_from_interpreted_entry
+  // 属性设置为解释执行的入口
   address entry = Interpreter::entry_for_method(h_method);
   assert(entry != NULL, "interpreter entry must be non-null");
   // Sets both _i2i_entry and _from_interpreted_entry
@@ -898,6 +901,7 @@ void Method::link_method(methodHandle h_method, TRAPS) {
   // called from the vtable.  We need adapters on such methods that get loaded
   // later.  Ditto for mega-morphic itable calls.  If this proves to be a
   // problem we'll make these lazily later.
+  // 为编译执行设置入口
   (void) make_adapters(h_method, CHECK);
 
   // ONLY USE the h_method now as make_adapter may have blocked

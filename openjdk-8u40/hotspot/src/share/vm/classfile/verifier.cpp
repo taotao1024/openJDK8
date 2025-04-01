@@ -118,6 +118,10 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   char* exception_message = message_buffer;
 
   const char* klassName = klass->external_name();
+  // can_failover表示失败回退，对于小于  NOFAILOVER_MAJOR_VERSION主版本号（值为
+  // 51）的Class文件，可以使用StackMapTable属性进行验  证，这是类型检查，之前的是
+  // 类型推导验证。如果can_failover的值为true，则表示类  型检查失败时可回退使用类型
+  // 推导验证
   bool can_failover = FailOverToOldVerifier &&
       klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
@@ -128,7 +132,9 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     if (TraceClassInitialization) {
       tty->print_cr("Start class verification for: %s", klassName);
     }
+    // STACKMAP_ATTRIBUTE_MAJOR_VERSION的值为50
     if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
+      // 使用类型检查，如果失败，则使用类型推导验证
       ClassVerifier split_verifier(klass, THREAD);
       split_verifier.verify_class(THREAD);
       exception_name = split_verifier.result();
@@ -139,6 +145,9 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
           tty->print_cr(
             "Fail over class verification to old verifier for: %s", klassName);
         }
+        // 只有主版本号大于等于50并且can_failover为true时才会执行到这里，
+        // can_failover为true时表示主版本号必定小于51，因此只有50版本允许回退
+        // 到类型推导验证
         exception_name = inference_verify(
           klass, message_buffer, message_buffer_len, THREAD);
       }
@@ -146,6 +155,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
         exception_message = split_verifier.exception_message();
       }
     } else {
+      // 使用类型推导验证
       exception_name = inference_verify(
           klass, message_buffer, message_buffer_len, THREAD);
     }

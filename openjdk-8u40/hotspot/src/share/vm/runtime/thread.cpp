@@ -989,7 +989,9 @@ bool Thread::set_as_starting_thread() {
 }
 
 static void initialize_class(Symbol* class_name, TRAPS) {
+  // 类的初始化前，首先要调用SystemDictionary::resolve_or_fail()函数以保证类被正确装载。
   Klass* klass = SystemDictionary::resolve_or_fail(class_name, true, CHECK);
+  // 类的初始化
   InstanceKlass::cast(klass)->initialize(CHECK);
 }
 
