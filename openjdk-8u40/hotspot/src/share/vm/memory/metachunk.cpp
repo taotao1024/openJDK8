@@ -68,7 +68,10 @@ Metachunk::Metachunk(size_t word_size,
                       metadata_chunk_initialize);
 #endif
 }
-
+/**
+* 函数Metachunk::allocate()通过指针碰撞算法分
+* 配内存，不需要使用额外的手段保证线程安全
+*/
 MetaWord* Metachunk::allocate(size_t word_size) {
   MetaWord* result = NULL;
   // If available, bump the pointer to allocate.

@@ -347,7 +347,7 @@ bool GenCollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
          ((cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||
           (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
 }
-
+// 执行垃圾回收
 void GenCollectedHeap::do_collection(bool  full,
                                      bool   clear_all_soft_refs,
                                      size_t size,
@@ -557,6 +557,7 @@ void GenCollectedHeap::do_collection(bool  full,
 
     if (complete) {
       // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+      // purge() 删除已卸载的类加载器的元空间并清理loader_data图
       ClassLoaderDataGraph::purge();
       MetaspaceAux::verify_metrics();
       // Resize the metaspace capacity after full collections

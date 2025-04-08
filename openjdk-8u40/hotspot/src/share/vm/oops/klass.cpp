@@ -156,8 +156,11 @@ Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLoo
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
   // 在元数据区分配内存空间
   // 对于OpenJDK 8来说，Klass实例在元数据区分配内存
-  return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
-                             MetaspaceObj::ClassType, CHECK_NULL);
+  return Metaspace::allocate(loader_data, // 类加载器
+                             word_size,// 需要分配的内存块大小
+                             false, // read_only
+                             MetaspaceObj::ClassType,// 在类指针压缩空间中分配
+                             CHECK_NULL);
 }
 
 Klass::Klass() {

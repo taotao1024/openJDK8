@@ -345,7 +345,9 @@ oop ClassLoaderData::keep_alive_object() const {
   assert(!keep_alive(), "Don't use with CLDs that are artificially kept alive");
   return is_anonymous() ? _klasses->java_mirror() : class_loader();
 }
-
+/**
+* 判断是否存活
+*/
 bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
   bool alive = keep_alive() // null class loader and incomplete anonymous klasses.
       || is_alive_closure->do_object_b(keep_alive_object());
@@ -746,6 +748,7 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 
 // Move class loader data from main list to the unloaded list for unloading
 // and deallocation later.
+// 类加载器的卸载
 bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure, bool clean_alive) {
   ClassLoaderData* data = _head;
   ClassLoaderData* prev = NULL;
@@ -768,6 +771,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure, boo
     // Remove from loader list.
     // This class loader data will no longer be found
     // in the ClassLoaderDataGraph.
+    // 从列表中移除ClassLoaderData实例
     if (prev != NULL) {
       prev->set_next(data);
     } else {
@@ -776,7 +780,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure, boo
     }
     dead->set_next(_unloading);
     _unloading = dead;
-  }
+  } // 结束while循环
 
   if (clean_alive) {
     // Clean previous versions and the deallocate list.

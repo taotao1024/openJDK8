@@ -64,6 +64,7 @@ size_t Metaspace::_compressed_class_space_size;
 const MetaspaceTracer* Metaspace::_tracer = NULL;
 
 // Used in declarations in SpaceManager and ChunkManager
+// 枚举常量
 enum ChunkIndex {
   ZeroIndex = 0,
   SpecializedIndex = ZeroIndex,
@@ -73,7 +74,12 @@ enum ChunkIndex {
   NumberOfFreeLists = 3,
   NumberOfInUseLists = 4
 };
-
+// SpaceManager类定义中的_chunks_in_use是一个
+// 存储4个Metachunk*类型的数组，每个槽上存储一个链
+// 表结构，链表结构中的Metachunk块大小相同。例如下
+// 标索引为SpecializedIndex的槽位上存储的是指定的
+// 128KB的Metachunk块。各个块的大小在枚举类中定
+// 义，代码如下：
 enum ChunkSizes {    // in words.
   ClassSpecializedChunk = 128,
   SpecializedChunk = 128,
@@ -99,6 +105,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
   friend class TestVirtualSpaceNodeTest;
 
   // Free list of chunks of different sizes.
+  //   空闲列表中含有以下4种尺寸的块：
   //   SpecializedChunk
   //   SmallChunk
   //   MediumChunk
@@ -106,6 +113,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
   ChunkList _free_chunks[NumberOfFreeLists];
 
   //   HumongousChunk
+  //   巨大的块通过字典来保存
   ChunkTreeDictionary _humongous_dictionary;
 
   // ChunkManager in all lists of this type
@@ -614,6 +622,7 @@ class SpaceManager : public CHeapObj<mtClass> {
   Mutex* const _lock;
 
   // Type of metadata allocated.
+  // 分配的元数据区类型
   Metaspace::MetadataType _mdtype;
 
   // List of chunks in use by this SpaceManager.  Allocations
@@ -637,6 +646,7 @@ class SpaceManager : public CHeapObj<mtClass> {
   // are assumed to be in chunks in use by the SpaceManager
   // and all chunks in use by a SpaceManager are freed when
   // the class loader using the SpaceManager is collected.
+  // 保存许多空闲的内存块，为了加快查找速度，这些块底层使用了字典结构。
   BlockFreelist _block_freelists;
 
   // protects virtualspace and chunk expansions
@@ -1088,6 +1098,7 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
   VirtualSpaceNode* purged_vsl = NULL;
   VirtualSpaceNode* prev_vsl = virtual_space_list();
   VirtualSpaceNode* next_vsl = prev_vsl;
+  // 遍历VirtualSpaceNode
   while (next_vsl != NULL) {
     VirtualSpaceNode* vsl = next_vsl;
     next_vsl = vsl->next();
@@ -1095,6 +1106,7 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
     // be needed soon.
     if (vsl->container_count() == 0 && vsl != current_virtual_space()) {
       // Unlink it from the list
+      // 将当前的VirtualSpaceNode从列表中移除
       if (prev_vsl == vsl) {
         // This is the case of the current node being the first node.
         assert(vsl == virtual_space_list(), "Expected to be the first node");
@@ -1102,8 +1114,9 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
       } else {
         prev_vsl->set_next(vsl->next());
       }
-
+      // 将当前的VirtualSpaceNode中使用的chunks从空闲列表中移除
       vsl->purge(chunk_manager);
+      // 将VirtualSpaceNode使用的内存归还给操作系统
       dec_reserved_words(vsl->reserved_words());
       dec_committed_words(vsl->committed_words());
       dec_virtual_space_count();
@@ -2102,6 +2115,8 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
   }
 
   // Get another chunk out of the virtual space
+  // 计算块的大小并从空闲块中获取，或者从
+  // VirtualSpaceNode中新分配一个空闲块
   size_t grow_chunks_by_words = calc_chunk_size(word_size);
   Metachunk* next = get_new_chunk(word_size, grow_chunks_by_words);
 
@@ -2109,6 +2124,8 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
 
   // If a chunk was available, add it to the in-use chunk list
   // and do an allocation from it.
+  // 将分配出的内存块存储到SpaceManager的_chunks_in_use中进行管理，同时从这个新
+  // 的块中分配请求的内存
   if (next != NULL) {
     // Add to this manager's list of chunks in use.
     add_chunk(next, false);
@@ -2241,8 +2258,8 @@ SpaceManager::~SpaceManager() {
   // Do not mangle freed Metachunks.  The chunk size inside Metachunks
   // is during the freeing of a VirtualSpaceNodes.
 
-  // Have to update before the chunks_in_use lists are emptied
-  // below.
+  // Have to update before the chunks_in_use lists are emptied below.
+  // 统计空闲块内存的总量
   chunk_manager()->inc_free_chunks_total(allocated_chunks_words(),
                                          sum_count_in_chunks_in_use());
 
@@ -2251,7 +2268,8 @@ SpaceManager::~SpaceManager() {
 
   // Follow each list of chunks-in-use and add them to the
   // free lists.  Each list is NULL terminated.
-
+  // 将当前SpaceManger使用的所有SpecializedChunk、SmallChunk与
+  // MediumChunk交给ChunkManger管理
   for (ChunkIndex i = ZeroIndex; i < HumongousIndex; i = next_chunk_index(i)) {
     if (TraceMetadataChunkAllocation && Verbose) {
       gclog_or_tty->print_cr("returned %d %s chunks to freelist",
@@ -2281,6 +2299,7 @@ SpaceManager::~SpaceManager() {
     gclog_or_tty->print("Humongous chunk dictionary: ");
   }
   // Humongous chunks are never the current chunk.
+  // HumongousChunk交给ChunkManger管理
   Metachunk* humongous_chunks = chunks_in_use(HumongousIndex);
 
   while (humongous_chunks != NULL) {
@@ -2411,13 +2430,16 @@ void SpaceManager::retire_current_chunk() {
     }
   }
 }
-
+// 优先从ChunkManager中管理的空闲块中获取，
+// 如果获取不到，从VirtualSpaceNode中获取
 Metachunk* SpaceManager::get_new_chunk(size_t word_size,
                                        size_t grow_chunks_by_words) {
   // Get a chunk from the chunk freelist
+  // 从空闲列表中获取空闲块
   Metachunk* next = chunk_manager()->chunk_freelist_allocate(grow_chunks_by_words);
 
   if (next == NULL) {
+    // 如果获取不到，从VirtualSpaceNode中获取
     next = vs_list()->get_new_chunk(word_size,
                                     grow_chunks_by_words,
                                     medium_chunk_bunch());
@@ -3475,6 +3497,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   // Allocate in metaspaces without taking out a lock, because it deadlocks
   // with the SymbolTable_lock.  Dumping is single threaded for now.  We'll have
   // to revisit this for application class data sharing.
+  // 转储共享空间
   if (DumpSharedSpaces) {
     assert(type > MetaspaceObj::UnknownType && type < MetaspaceObj::_number_of_types, "sanity");
     Metaspace* space = read_only ? loader_data->ro_metaspace() : loader_data->rw_metaspace();
@@ -3487,6 +3510,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     }
 
     // Zero initialize.
+    // 将分配的内存清零
     Copy::fill_to_aligned_words((HeapWord*)result, word_size, 0);
 
     return result;
@@ -3659,7 +3683,9 @@ void Metaspace::purge(MetadataType mdtype) {
 void Metaspace::purge() {
   MutexLockerEx cl(SpaceManager::expand_lock(),
                    Mutex::_no_safepoint_check_flag);
+  // 清理元空间
   purge(NonClassType);
+  // 如果使用了类指针压缩空间，则清理此空间
   if (using_class_space()) {
     purge(ClassType);
   }

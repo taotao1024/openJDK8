@@ -257,7 +257,10 @@ void VM_CollectForMetadataAllocation::doit() {
   // Check again if the space is available.  Another thread
   // may have similarly failed a metadata allocation and induced
   // a GC that freed space for the allocation.
+  // MetadataAllocationFailALot默认为false，表示是否在一定时间内触发了太多的GC
   if (!MetadataAllocationFailALot) {
+    // 再次尝试分配，可能其他线程分配失败时触发了GC，释放了空间
+    // 在GC之后再次尝试分配
     _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
     if (_result != NULL) {
       return;
@@ -266,6 +269,7 @@ void VM_CollectForMetadataAllocation::doit() {
 
   if (initiate_concurrent_GC()) {
     // For CMS and G1 expand since the collection is going to be concurrent.
+    // 扩展元空间后再次尝试内存分配
     _result = _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
     if (_result != NULL) {
       return;
@@ -278,6 +282,7 @@ void VM_CollectForMetadataAllocation::doit() {
   heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
   // After a GC try to allocate without expanding.  Could fail
   // and expansion will be tried below.
+  // 在GC之后再次尝试分配
   _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
   if (_result != NULL) {
     return;
@@ -288,6 +293,7 @@ void VM_CollectForMetadataAllocation::doit() {
   // amount of the expansion.
   // This should work unless there really is no more space
   // or a MaxMetaspaceSize has been specified on the command line.
+  // 扩展元空间后再次尝试内存分配
   _result = _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
   if (_result != NULL) {
     return;
@@ -298,6 +304,7 @@ void VM_CollectForMetadataAllocation::doit() {
   // behavior is similar to the last-ditch collection done for perm
   // gen when it was full and a collection for failed allocation
   // did not free perm gen space.
+  // 再次尝试GC（这次会回收软引用）后进行内存分配
   heap->collect_as_vm_thread(GCCause::_last_ditch_collection);
   _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
   if (_result != NULL) {

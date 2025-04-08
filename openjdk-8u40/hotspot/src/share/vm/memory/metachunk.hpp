@@ -97,9 +97,11 @@ class Metabase VALUE_OBJ_CLASS_SPEC {
 class Metachunk : public Metabase<Metachunk> {
   friend class TestMetachunk;
   // The VirtualSpaceNode containing this chunk.
+  // 此Metachunk归属的VirtualSpaceNode节点
   VirtualSpaceNode* _container;
 
   // Current allocation top.
+  // 当前分配的位置
   MetaWord* _top;
 
   DEBUG_ONLY(bool _is_tagged_free;)
