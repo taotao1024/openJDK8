@@ -112,13 +112,15 @@ protected:
   // There should be only a single instance of "SharedHeap" in a program.
   // This is enforced with the protected constructor below, which will also
   // set the static pointer "_sh" to that instance.
+  // 由于是静态变量，所以在整个应用中只有一个SharedHeap实例
   static SharedHeap* _sh;
 
-  // and the Gen Remembered Set, at least one good enough to scan the perm
-  // gen.
+  // and the Gen Remembered Set, at least one good enough to scan the permgen.
+  // 记忆集，用来保存老年代指向年轻代的引用
   GenRemSet* _rem_set;
 
   // A gc policy, controls global gc resource issues
+  // 保存堆的回收策略
   CollectorPolicy *_collector_policy;
 
   // See the discussion below, in the specification of the reader function

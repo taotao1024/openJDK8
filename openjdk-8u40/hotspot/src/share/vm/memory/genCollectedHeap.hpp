@@ -36,7 +36,9 @@ class SubTasksDone;
 // collection.  It is represented with a sequence of Generation's.
 class GenCollectedHeap : public SharedHeap {
   friend class GenCollectorPolicy;
+  // 公有结构，保存上次GC耗时、该代的内存起始地址和GC性能计数。
   friend class Generation;
+  // 一种包含Eden、From survivor和To survivor的分代。
   friend class DefNewGeneration;
   friend class TenuredGeneration;
   friend class ConcurrentMarkSweepGeneration;
@@ -67,6 +69,7 @@ public:
   GenerationSpec** _gen_specs;
 
   // The generational collector policy.
+  // 分代垃圾的回收策略
   GenCollectorPolicy* _gen_policy;
 
   // Indicates that the most recent previous incremental collection failed.

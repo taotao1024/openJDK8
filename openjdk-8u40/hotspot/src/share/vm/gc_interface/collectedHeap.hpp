@@ -98,7 +98,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   bool _defer_initial_card_mark;
 
  protected:
+  // 为当前堆分配的内存区域
   MemRegion _reserved;
+  // 屏障，用于标记脏卡
   BarrierSet* _barrier_set;
   bool _is_gc_active;
   uint _n_par_threads;

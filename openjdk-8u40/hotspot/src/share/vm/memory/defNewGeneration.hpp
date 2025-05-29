@@ -44,10 +44,14 @@ class DefNewGeneration: public Generation {
   friend class VMStructs;
 
 protected:
+  // 当前代的下一个内存代，对于年轻代来说，下一个内存代就是老年代
   Generation* _next_gen;
+  // 最大的晋升年龄
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   ageTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
+  // 当分配对象的内存大于以下值时，会被认为是大对象，直接在老年代中分配
+  // 可通过-XX:PretenureSizeThreshold选项指定此值
   size_t      _pretenure_size_threshold_words;
 
   ageTable*   age_table() { return &_age_table; }

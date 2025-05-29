@@ -41,13 +41,21 @@
 // The Generation class hierarchy:
 //
 // Generation                      - abstract base class
+//                                   公有结构，保存上次GC耗时、该代的内存起始地址和GC性能计数。
 // - DefNewGeneration              - allocation area (copy collected)
+//                                   一种包含Eden、From survivor和To survivor的分代。
 //   - ParNewGeneration            - a DefNewGeneration that is collected by
 //                                   several threads
 // - CardGeneration                 - abstract class adding offset array behavior
+//                                    包含卡表（CardTable）的分
+//                                    代，由于年轻代在回收时需要标记出年轻代的存活
+//                                    对象，所以还需要以老年代为根进行标记。为了避
+//                                    免全量扫描，通过卡表来加快标记速度。
 //   - OneContigSpaceCardGeneration - abstract class holding a single
 //                                    contiguous space with card marking
+//                                    包含卡表的连续内存的分代。
 //     - TenuredGeneration         - tenured (old object) space (markSweepCompact)
+//                                   可Mark-Compact（标记-压缩）的卡表代。
 //   - ConcurrentMarkSweepGeneration - Mostly Concurrent Mark Sweep Generation
 //                                       (Detlefs-Printezis refinement of
 //                                       Boehm-Demers-Schenker)
@@ -88,7 +96,9 @@ struct ScratchBlock {
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
+  // 记录最后一次GC在这个代上发生的时间
   jlong _time_of_last_gc; // time when last gc on this generation happened (ms)
+  // 回收器需要在某些时刻记住当时已经被使用的内存总量
   MemRegion _prev_used_region; // for collectors that want to "remember" a value for
                                // used region at some specific point during collection.
 
@@ -97,15 +107,18 @@ class Generation: public CHeapObj<mtGC> {
   // committed) for generation.
   // Used by card marking code. Must not overlap with address ranges of
   // other generations.
+  // 保存了内存区域的基址和大小，主要在卡标记的过程中使用
   MemRegion _reserved;
 
   // Memory area reserved for generation
+  // 为代预留的内存区域
   VirtualSpace _virtual_space;
 
   // Level in the generation hierarchy.
   int _level;
 
   // ("Weak") Reference processing support
+  // 对于引用处理的支持
   ReferenceProcessor* _ref_processor;
 
   // Performance Counters

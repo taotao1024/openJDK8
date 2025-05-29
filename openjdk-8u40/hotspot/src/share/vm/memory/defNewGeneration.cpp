@@ -227,8 +227,11 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 
   compute_space_boundaries(0, SpaceDecorator::Clear, SpaceDecorator::Mangle);
   update_counters();
+  // 指向下一个内存代 当前年轻代的下一个内存代为老年代
   _next_gen = NULL;
+  // 控制新生代对象晋升到老年代中的最大阈值
   _tenuring_threshold = MaxTenuringThreshold;
+  // 当新对象申请的内存空间大于这个参数的时候，直接在老年代中分配内存
   _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
 
   _gc_timer = new (ResourceObj::C_HEAP, mtGC) STWGCTimer();
