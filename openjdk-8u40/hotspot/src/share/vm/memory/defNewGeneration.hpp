@@ -150,7 +150,10 @@ protected:
 
   // Return the size of a survivor space if this generation were of size
   // gen_size.
+  // 函数计算Survivor的大小
   size_t compute_survivor_size(size_t gen_size, size_t alignment) const {
+    // 在JVM参数中有一个比较重要的参数
+    // SurvivorRatio，用于定义新生代中Eden空间和Survivor空间的比例，默认为8
     size_t n = gen_size / (SurvivorRatio + 2);
     return n > alignment ? align_size_down(n, alignment) : alignment;
   }

@@ -638,13 +638,16 @@ class CardGeneration: public Generation {
   friend class VMStructs;
  protected:
   // This is shared with other generations.
+  // 卡表，加快找到老年代引用的年轻代对象
   GenRemSet* _rs;
   // This is local to this generation.
+  // 偏移表，与卡表配合加快找到老年代引用的年轻代对象
   BlockOffsetSharedArray* _bts;
 
   // current shrinking effect: this damps shrinking when the heap gets empty.
+  // 当堆空闲过多时会参考收缩因子进行收缩
   size_t _shrink_factor;
-
+  // 扩展一次内存堆时的最小内存
   size_t _min_heap_delta_bytes;   // Minimum amount to expand.
 
   // Some statistics from before gc started.
@@ -691,6 +694,7 @@ class OneContigSpaceCardGeneration: public CardGeneration {
   friend class VM_PopulateDumpSharedSpace;
 
  protected:
+  // 老年代只有一个空间，通过_the_space变量来保存。
   ContiguousSpace*  _the_space;       // actual space holding objects
   WaterMark  _last_gc;                // watermark between objects allocated before
                                       // and after last GC.

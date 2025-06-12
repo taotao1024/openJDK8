@@ -62,6 +62,10 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   GCPolicyCounters* _gc_policy_counters;
 
   virtual void initialize_alignments() = 0;
+  // MarkSweepPolicy类没有实现initialize_flags()
+  // 函数，但CollectorPolicy、GenCollector-Policy和
+  // TwoGenerationCollectorPolicy类都实现了
+  // initialize_flags()函数
   virtual void initialize_flags();
   virtual void initialize_size_info();
 
@@ -97,17 +101,27 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
  public:
   virtual void initialize_all() {
+    // 下面三个都是虚函数，因此调用的函数取决于实际的策略。
+    // 堆对齐、空间对齐
     initialize_alignments();
+    // initialize_flags()函数，整个堆的最小值、初始值
+    // 和最大值已经确定，所以代的内存计算必须要限制在
+    // 堆的当前内存空间之内。
     initialize_flags();
+    // 调用各个类的initialize_size_info()函数确定
+    // 年轻代与老年代内存的最小值、初始值和最大值，在
+    // 调用该函数之前，由于已经调用过
     initialize_size_info();
   }
 
   // Return maximum heap alignment that may be imposed by the policy
   static size_t compute_heap_alignment();
-
+  // 保存空间与堆对齐的数值
+  // initialize_alignments()函数初始了下面两个参数
   size_t space_alignment()        { return _space_alignment; }
   size_t heap_alignment()         { return _heap_alignment; }
-
+  // 保存堆的初始值、最大值与最小值
+  // 需要在CollectorPolicy::CollectorPolicy()构造函数中初始化
   size_t initial_heap_byte_size() { return _initial_heap_byte_size; }
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
   size_t min_heap_byte_size()     { return _min_heap_byte_size; }
@@ -222,14 +236,19 @@ class ClearedAllSoftRefs : public StackObj {
 class GenCollectorPolicy : public CollectorPolicy {
 friend class TestGenCollectorPolicy;
  protected:
+  // 保存分代中第一个代的最小值、初始值和最大值，任何分代堆
+  // 都至少会有一个代
+  // 如果有多个代，则当前表示的是最年轻的代
   size_t _min_gen0_size;
   size_t _initial_gen0_size;
   size_t _max_gen0_size;
 
   // _gen_alignment and _space_alignment will have the same value most of the
   // time. When using large pages they can differ.
+  // _gen_alignment一般和_space_alignment相同，前面介绍的
+  // MarkSweepPolicy::initialize_alignments()函数也是将两个属性赋予了相同的值
   size_t _gen_alignment;
-
+  // 定义在GenCollectorPolicy类中
   GenerationSpec **_generations;
 
   // Return true if an allocation should be attempted in the older
@@ -278,7 +297,9 @@ friend class TestGenCollectorPolicy;
   virtual void initialize_generations() { };
 
   virtual void initialize_all() {
+    // 初始化一些属性，尤其是与内存大小相关的一些属性
     CollectorPolicy::initialize_all();
+    // 初始化堆
     initialize_generations();
   }
 

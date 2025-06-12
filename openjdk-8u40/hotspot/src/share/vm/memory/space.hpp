@@ -73,10 +73,11 @@ class DirtyCardToOopClosure;
 // Invariant: bottom() and end() are on page_size boundaries and
 // bottom() <= top() <= end()
 // top() is inclusive and end() is exclusive.
-
+// 空间(父类)
 class Space: public CHeapObj<mtGC> {
   friend class VMStructs;
  protected:
+  // 为了方便内存管理，首地址和尾地址都指向内存页的边界。
   HeapWord* _bottom;
   HeapWord* _end;
 
@@ -339,12 +340,16 @@ public:
 // necessarily, a space that is normally contiguous.  But, for example, a
 // free-list-based space whose normal collection is a mark-sweep without
 // compaction could still support compaction in full GC's.
-
+// 压缩空间
 class CompactibleSpace: public Space {
   friend class VMStructs;
   friend class CompactibleFreeListSpace;
 private:
+  // 保存需要移动的对象所占用的内存空间，即从_bottom到_compaction_top
+  // 之间的内存都被分配给那些需要移动的对象HeapWord* _compaction_top;
   HeapWord* _compaction_top;
+  // 下一个支持压缩操作的Space实例，如果当前的Space实例没有足够的空间保存需要移动
+  // 的对象就会切换到_next_compaction_space中保存移动的对象
   CompactibleSpace* _next_compaction_space;
 
 public:
@@ -427,7 +432,10 @@ public:
 
 protected:
   // Used during compaction.
+  // 第一个deadspace的起始地址，没有被标记的对象的内存区域或者非Java对象的
+  // 内存区域都视为deadspace
   HeapWord* _first_dead;
+  // 最后一个连续的被标记为活跃对象的内存区域的终止地址
   HeapWord* _end_of_live;
 
   // Minimum size of a free block.
@@ -455,10 +463,13 @@ class GenSpaceMangler;
 
 // A space in which the free area is contiguous.  It therefore supports
 // faster allocation, and compaction.
+// 连续空间
 class ContiguousSpace: public CompactibleSpace {
   friend class OneContigSpaceCardGeneration;
   friend class VMStructs;
  protected:
+  // _top属性保存Space实例表示的内存空间的起始地
+  // 址，在分配内存时会从这个字段指向的地址开始分配。
   HeapWord* _top;
   HeapWord* _concurrent_iteration_safe_limit;
   // A helper for mangling the unused area of the space in debug builds.
@@ -689,10 +700,12 @@ public:
 // Class EdenSpace describes eden-space in new generation.
 
 class DefNewGeneration;
-
+// EdenSpace实例表示Eden区
 class EdenSpace : public ContiguousSpace {
   friend class VMStructs;
  private:
+  // _gen属性保存了此Eden区所归属的代
+  // 类型为DefNewGeneration表示归属年轻代
   DefNewGeneration* _gen;
 
   // _soft_end is used as a soft limit on allocation.  As soft limits are

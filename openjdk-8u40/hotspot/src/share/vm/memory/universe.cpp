@@ -830,13 +830,17 @@ jint Universe::initialize_heap() {
     } else { // default old generation
       gc_policy = new MarkSweepPolicy();
     }
+    // 初始化MarkSweepPolicy::_generations属性
+    // 如0为Generation::DefNew，1为Generation::MarkSweepCompact
+    // openJDK8/blob/main/openjdk-8u40/hotspot/src/share/vm/memory/collectorPolicy.hpp#initialize_all
     gc_policy->initialize_all();
-
+    // 堆使用GenCollectedHeap来管理
     Universe::_collectedHeap = new GenCollectedHeap(gc_policy);
   }
 
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
-
+  // Universe::heap()函数获取的就是Universe::_collectedHeap属性，调用
+  // initialize()函数初始化堆
   jint status = Universe::heap()->initialize();
   if (status != JNI_OK) {
     return status;
@@ -932,7 +936,8 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(!UseLargePages
       || UseParallelGC
       || use_large_pages, "Wrong alignment to use large pages");
-
+  // 加了-XX:-UseCompressedOops选项后，返回的addr为NULL
+  //  Universe::preferred_heap_base()函数主要是处理压缩指针的地址
   char* addr = Universe::preferred_heap_base(total_reserved, alignment, Universe::UnscaledNarrowOop);
 
   ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages, addr);

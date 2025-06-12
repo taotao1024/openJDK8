@@ -86,6 +86,9 @@ jint GenCollectedHeap::initialize() {
   CollectedHeap::pre_initialize();
 
   int i;
+  // 调用gen_policy()函数获取GenCollectedHeap类中_gen_policy变量的值
+  // 调用的是TwoGenerationCollectorPolicy类中定义的 number_of_generations()
+  // 函数，此函数返回常量值2，表示共有两个代，即年轻代和老年代
   _n_gens = gen_policy()->number_of_generations();
 
   // While there are no constraints in the GC code that HeapWordSize
@@ -101,6 +104,9 @@ jint GenCollectedHeap::initialize() {
   _gen_specs = gen_policy()->generations();
 
   // Make sure the sizes are all aligned.
+  // 确保GenerationSpec类中的_init_size和_max_size属性值是按gen_alignment
+  // 对齐的。之前已经在MarkSweepPolicy::initialize_generations()函数中构造
+  // GenerationSpec实例时初始化了这两个属性值
   for (i = 0; i < _n_gens; i++) {
     _gen_specs[i]->align(gen_alignment);
   }
@@ -113,7 +119,7 @@ jint GenCollectedHeap::initialize() {
   ReservedSpace heap_rs;
 
   size_t heap_alignment = collector_policy()->heap_alignment();
-
+  // 为堆分配空间 GenCollectedHeap::allocate(
   heap_address = allocate(heap_alignment, &total_reserved,
                           &n_covered_regions, &heap_rs);
 
@@ -122,7 +128,7 @@ jint GenCollectedHeap::initialize() {
       "Could not reserve enough space for object heap");
     return JNI_ENOMEM;
   }
-
+  // 为CollectedHeap中的_reserved变量赋值
   _reserved = MemRegion((HeapWord*)heap_rs.base(),
                         (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
@@ -140,6 +146,9 @@ jint GenCollectedHeap::initialize() {
 
   for (i = 0; i < _n_gens; i++) {
     ReservedSpace this_rs = heap_rs.first_part(_gen_specs[i]->max_size(), false, false);
+    // 调用GenerationSpec::init()函数返回Generation实例，初始化_gen数组
+    // 有了内存后就可以通过GenerationSpec::init()创建表示年轻代的DefNewGenereation和
+    // 表示老年代的TenuredGeneration实例了
     _gens[i] = _gen_specs[i]->init(this_rs, i, rem_set());
     heap_rs = heap_rs.last_part(_gen_specs[i]->max_size());
   }
@@ -157,7 +166,17 @@ jint GenCollectedHeap::initialize() {
   return JNI_OK;
 }
 
-
+/**
+* 分配内存的调用链
+* GenCollectedHeap::allocate() -->
+* Universe::reserve_heap() -->
+* ReservedHeapSpace::ReservedHeapSpace -->
+* ReservedSpace::ReservedSpace() -->
+* ReservedSpace::initialize() -->
+* os::reserve_memory() -->
+* os::pd_reserve_memory() -->
+* anon_mmap() -->
+*/
 char* GenCollectedHeap::allocate(size_t alignment,
                                  size_t* _total_reserved,
                                  int* _n_covered_regions,
@@ -168,6 +187,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
   // Now figure out the total size.
   size_t total_reserved = 0;
   int n_covered_regions = 0;
+  // UseLargePages表示是否使用大页，默认不使用，因此这个变量的值为false，最终获取
+  // 的是虚拟机页的大小4096
   const size_t pageSize = UseLargePages ?
       os::large_page_size() : os::vm_page_size();
 
@@ -190,7 +211,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
 
   *_total_reserved = total_reserved;
   *_n_covered_regions = n_covered_regions;
-
+  // 调用Universe::reserve_heap()函数分配内存
+  // 传递的参数total_reserved是年轻代与老年代的内存最大值之和
   *heap_rs = Universe::reserve_heap(total_reserved, alignment);
   return heap_rs->base();
 }
