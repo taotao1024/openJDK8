@@ -108,8 +108,10 @@ inline void oopDesc::set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || k != NULL, "must be a real Klass*");
   assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass*");
   if (UseCompressedClassPointers) {
+    // 当开启了类指针压缩时，设置_metadata._compressed_klass属性的值
     *compressed_klass_addr() = Klass::encode_klass_not_null(k);
   } else {
+    // 设置_metadata._klass属性的值
     *klass_addr() = k;
   }
 }

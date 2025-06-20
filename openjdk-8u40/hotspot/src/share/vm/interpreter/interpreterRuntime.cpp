@@ -155,6 +155,7 @@ IRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* thread, ConstantPool* pool,
   klass->check_valid_for_instantiation(true, CHECK);
 
   // Make sure klass is initialized
+  // 确保klass已经完成初始化
   klass->initialize(CHECK);
 
   // At this point the class may not be fully initialized
@@ -171,6 +172,9 @@ IRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* thread, ConstantPool* pool,
   //       Java).
   //       If we have a breakpoint, then we don't rewrite
   //       because the _breakpoint bytecode would be lost.
+  //   为Java对象分配内存
+  // openjdk/hotspot/src/share/vm/oops/instanceKlass.cpp
+  // instanceKlass::allocate_instance(TRAPS)
   oop obj = klass->allocate_instance(CHECK);
   thread->set_vm_result(obj);
 IRT_END

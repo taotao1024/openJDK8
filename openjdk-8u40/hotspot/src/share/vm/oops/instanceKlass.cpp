@@ -1169,6 +1169,7 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 }
 // 在创建instanceOop实例时会调用allocate_instance()函数
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
+  // 是否重写finalize()方法
   bool has_finalizer_flag = has_finalizer(); // Query before possible GC
   // 获取创建instanceOop实例所需要的内存空间
   // 从_layout_helper属性中获取Java对象所需要的内存空间大小
@@ -1177,7 +1178,7 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
   KlassHandle h_k(THREAD, this);
 
   instanceOop i;
-  // 分配size的内存
+  // 分配size的内存、分配对象
   i = (instanceOop)CollectedHeap::obj_allocate(h_k, size, CHECK_NULL);
   if (has_finalizer_flag && !RegisterFinalizersAtInit) {
     i = register_finalizer(i, CHECK_NULL);

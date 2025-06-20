@@ -702,6 +702,7 @@ inline HeapWord* ContiguousSpace::allocate_impl(size_t size,
 // This version is lock-free.
 /**
 * 真正分配内存的方法
+* 由于可能有多个线程同时尝试分配，为了保证不冲突，采用了CAS方式保证执行结果的正确性
 */
 inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size,
                                                     HeapWord* const end_value) {
@@ -721,11 +722,14 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size,
       // result can be one of two:
       //  the old top value: the exchange succeeded 交换成功
       //  otherwise: the new value of the top is returned. 返回new_top
+      // 当CAS操作成功时，result等于obj，表示内存分配成功，否则循环，再次尝试分配
       if (result == obj) {
         assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+        // 分配成功时返回内存块首地址
         return obj;
       }
     } else {
+      // 分配失败时返回
       // 触发GC
       return NULL;
     }

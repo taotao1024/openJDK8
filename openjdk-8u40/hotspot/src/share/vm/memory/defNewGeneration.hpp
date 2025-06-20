@@ -268,15 +268,21 @@ protected:
   // Allocation support
   virtual bool should_allocate(size_t word_size, bool is_tlab) {
     assert(UseTLAB || !is_tlab, "Should not allocate tlab");
-
+    // 在64位系统下，BitsPerSize_t的值为64，LogHeapWordSize的值为3
     size_t overflow_limit    = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-
+    // 判断条件1
+    // 申请的内存空间未溢出
     const bool non_zero      = word_size > 0;
+    // 判断条件2
+    // 申请的内存大小不为0
     const bool overflows     = word_size >= overflow_limit;
+    // 判断条件3
+    // 申请的内存未超过本内存代的限制阈值
+    // 检查申请的内存是否太大，check_too_big为true时，对象直接在old区分配内存
     const bool check_too_big = _pretenure_size_threshold_words > 0;
     const bool not_too_big   = word_size < _pretenure_size_threshold_words;
     const bool size_ok       = is_tlab || !check_too_big || not_too_big;
-
+    // 3个判断条件必须都满足
     bool result = !overflows &&
                   non_zero   &&
                   size_ok;

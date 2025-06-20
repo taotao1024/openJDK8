@@ -3248,38 +3248,48 @@ void TemplateTable::invokedynamic(int byte_no) {
 
 void TemplateTable::_new() {
   transition(vtos, atos);
+  // 加载new指令后的操作数
   __ get_unsigned_2_byte_index_at_bcp(rdx, 1);
   Label slow_case;
   Label done;
   Label initialize_header;
   Label initialize_object; // including clearing the fields
   Label allocate_shared;
-
+  // 获取常量池首地址并放入%rcx中
   __ get_cpool_and_tags(rsi, rax);
   // Make sure the class we're about to instantiate has been resolved.
   // This is done before loading InstanceKlass to be consistent with the order
   // how Constant Pool is updated (see ConstantPool::klass_at_put)
+  // 判断_tags数组中对应元素的类型是否为 JVM_CONSTANT_Class，如果不是，则跳往
+  // slow_case处
   const int tags_offset = Array<u1>::base_offset_in_bytes();
   __ cmpb(Address(rax, rdx, Address::times_1, tags_offset),
           JVM_CONSTANT_Class);
   __ jcc(Assembler::notEqual, slow_case);
 
   // get InstanceKlass
+  // 获取创建对象所属类的地址并放入%rcx中，即放入的是类的运行时数据结构InstanceKlass
   __ movptr(rsi, Address(rsi, rdx,
             Address::times_8, sizeof(ConstantPool)));
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
+  // 判断类是否已经被初始化过，没有初始化过的话直接跳往
+  // slow_close进行慢速分配
+  // 如果对象所属类已经被初始化过，则会进行快速分配
   __ cmpb(Address(rsi,
                   InstanceKlass::init_state_offset()),
           InstanceKlass::fully_initialized);
   __ jcc(Assembler::notEqual, slow_case);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
+  // 此时%rcx中存放的是InstanceKlass实例的内存地址，利用
+  // 偏移获取创建的Java对象所需的内存并保存到%rdx中
   __ movl(rdx,
           Address(rsi,
                   Klass::layout_helper_offset()));
   // test to see if it has a finalizer or is malformed in some way
+  // 如果当前类中有finalizer()方法或有其他原因，则跳往slow_case进行慢速分配
   __ testl(rdx, Klass::_lh_instance_slow_path_bit);
   __ jcc(Assembler::notZero, slow_case);
 
@@ -3291,18 +3301,32 @@ void TemplateTable::_new() {
 
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc() && !CMSIncrementalMode;
-
+  // 默认UseTLAB的值为true
   if (UseTLAB) {
+    // 获取TLAB区剩余空间的首地址并放入%rax中
     __ movptr(rax, Address(r15_thread, in_bytes(JavaThread::tlab_top_offset())));
+    // %rdx保存对象大小，
+    // 根据TLAB空闲区首地址可计算出对象分配后的尾地址，然后放入%rbx中
     __ lea(rbx, Address(rax, rdx, Address::times_1));
+    // 将%rbx中的对象尾地址与TLAB空闲区尾地址进行比较
     __ cmpptr(rbx, Address(r15_thread, in_bytes(JavaThread::tlab_end_offset())));
+    // 如果%rbx大于TLAB空闲区结束地址，则表明TLAB区空闲区大小不足以分配该对象
+    // 在allow_shared_alloc（允许在Eden区分配）情况下，跳转到allocate_shared，
+    // 否则跳转到slow_case处
     __ jcc(Assembler::above, allow_shared_alloc ? allocate_shared : slow_case);
+    // 执行到这里，说明TLAB区有足够的空间分配对象
+    // 对象分配后，更新TLAB空闲区首地址为分配对象后的尾地址
     __ movptr(Address(r15_thread, in_bytes(JavaThread::tlab_top_offset())), rbx);
+    // 如果ZeroTLAB的值为true，则TLAB区会对回收的空闲区清零，那么就不需要再为对
+    // 象的变量进行清零操作了，而直接跳往initialize_header处初始化对象头
+    // ZeroTLAB默认的值为false，可通过-XX:+/-ZeroTLAB命令进行设置
     if (ZeroTLAB) {
       // the fields have been already cleared
+      // 字段已经被清零
       __ jmp(initialize_header);
     } else {
       // initialize both the header and fields
+      // 初始化对象头和字段
       __ jmp(initialize_object);
     }
   }
@@ -3310,9 +3334,11 @@ void TemplateTable::_new() {
   // Allocation in the shared Eden, if allowed.
   //
   // rdx: instance size in bytes
+  // %rdx中保存的是创建对象所需要的内存空间，以字节为单位
   if (allow_shared_alloc) {
+    // TLAB区分配失败会跳到这里
     __ bind(allocate_shared);
-
+    // 获取Eden区剩余空间的首地址和尾地址
     ExternalAddress top((address)Universe::heap()->top_addr());
     ExternalAddress end((address)Universe::heap()->end_addr());
 
@@ -3321,11 +3347,13 @@ void TemplateTable::_new() {
 
     __ lea(RtopAddr, top);
     __ lea(RendAddr, end);
+    // 将Eden空闲区首地址放入%rax中
     __ movptr(rax, Address(RtopAddr, 0));
 
     // For retries rax gets set by cmpxchgq
     Label retry;
     __ bind(retry);
+    // 计算对象尾地址，与空闲区尾地址进行比较，内存不足则跳转到慢速分配slow_case
     __ lea(rbx, Address(rax, rdx, Address::times_1));
     __ cmpptr(rbx, Address(RendAddr, 0));
     __ jcc(Assembler::above, slow_case);
@@ -3337,28 +3365,44 @@ void TemplateTable::_new() {
     // rax: object begin
     // rbx: object end
     // rdx: instance size in bytes
+    // rax：记录了对象分配的内存首地址
+    // rbx：记录了对象分配的内存尾地址
+    // rdx：记录了创建Java对象所需要的内存空间
     if (os::is_MP()) {
+      // 在多线程环境下加锁
       __ lock();
     }
+    // 利用CAS操作，更新Eden空闲区首地址为对象尾地址，
+    // 因为Eden区是线程共用的，所以需要加锁
     __ cmpxchgptr(rbx, Address(RtopAddr, 0));
 
     // if someone beat us on the allocation, try again, otherwise continue
+    // 如果CAS操作失败，需要跳转到retry重试
     __ jcc(Assembler::notEqual, retry);
 
     __ incr_allocated_bytes(r15_thread, rdx, 0);
   }
-
+  // 支持在TLAB区或Eden区分配内存
   if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
+    // 如果%rdx和sizeof(oopDesc)的大小一样，即对象所需大小和对象头大小一样，则表
+    // 明对象真正存储实例字段的数据区内存为0，不需要进行对象实例字段的初始化，而直接
+    // 跳往initialize_header初始化对象头即可。在HotSpot VM中，虽然对象头在内存
+    // 中排在对象实例数据前，但是会先初始化对象实例数据，再初始化对象头
     __ bind(initialize_object);
     __ decrementl(rdx, sizeof(oopDesc));
     __ jcc(Assembler::zero, initialize_header);
 
     // Initialize object fields
+    // 逻辑执行到这里，就要初始化对象的字段数据区了
+    // 执行异或，使得%rcx为0，为之后给对象变量赋零值做准备
     __ xorl(rcx, rcx); // use zero reg to clear memory (shorter code)
+    // 除以oopSize大小简化循环操作
     __ shrl(rdx, LogBytesPerLong);  // divide by oopSize to simplify the loop
     {
+      // 此处以%rdx（对象大小）递减，按字节对内存进行循环遍历，初始化对象实例内存为零值
+      // %rax中保存的是对象的首地址
       Label loop;
       __ bind(loop);
       __ movq(Address(rax, rdx, Address::times_8,
@@ -3369,14 +3413,22 @@ void TemplateTable::_new() {
     }
 
     // initialize object header only.
+    // 对象实例数据初始化后，开始初始化对象头（就是初始化oop中的mark和metadata属性）
     __ bind(initialize_header);
+    // 是否使用偏向锁，在大多数情况下，一个对象只会被同一个 线程访问，因此在对象头中记录
+    // 获取锁的线程ID，下次线程获取锁时就不需要加锁了
     if (UseBiasedLocking) {
+      // 将类的偏向锁相关数据移动到对象头部
       __ movptr(rscratch1, Address(rsi, Klass::prototype_header_offset()));
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()), rscratch1);
     } else {
+      // 将类的偏向锁相关数据移动到对象头部
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
                (intptr_t) markOopDesc::prototype()); // header (address 0x1)
     }
+    // 此时%rcx保存了InstanceKlass实例的首地址，%rax保存了对象首地址
+    // 将对象所属的类InstanceKlass实例首地址放入对象头中，对象oop中的_metadata
+    // 属性存储对象所属的类InstanceKlass实例的首地址
     __ xorl(rcx, rcx); // use zero reg to clear memory (shorter code)
     __ store_klass_gap(rax, rcx);  // zero klass gap for compressed oops
     __ store_klass(rax, rsi);      // store klass last
@@ -3390,18 +3442,27 @@ void TemplateTable::_new() {
       __ pop(atos); // restore the return value
 
     }
+    // 对象创建完成
     __ jmp(done);
   }
 
 
   // slow case
+  // 慢速分配，如果类没有被初始化，或者内存没有在TLAB或Eden区中分配成功，会跳到此处执行
   __ bind(slow_case);
+  // 获取常量池首地址，存入%rarg1中
   __ get_constant_pool(c_rarg1);
+  // 获取new指令后的操作数，即类在常量池中的索引，存入%rarg2
   __ get_unsigned_2_byte_index_at_bcp(c_rarg2, 1);
+  // 调用InterpreterRuntime::_new()函数进行对象内存分配
+  // call_VM()函数中会在调用InterpreterRuntime::_new()函数前后做一些准备。
+  // openjdk/hotspot/src/share/vm/interpreter/inpterpreterRuntime.cpp
+  // IRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* thread, ConstantPool* pool, int index))
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
   __ verify_oop(rax);
 
   // continue
+  // 对象创建完成
   __ bind(done);
 }
 

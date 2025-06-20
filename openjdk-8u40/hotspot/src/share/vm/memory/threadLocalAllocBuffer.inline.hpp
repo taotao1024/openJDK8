@@ -52,19 +52,25 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
   }
   return NULL;
 }
-
+// 要计算出新分配的TLAB的大小，这个值要大于等
+// 于需要为对象分配的内存空间，同时要在Eden空闲区
+// 和ThreadLocalAllocBuffer::_desired_size加上为对
+// 象分配的内存之和中取最小值。
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
+  // 对象要按MinObjAlignment（值为8）字节对齐
   const size_t aligned_obj_size = align_object_size(obj_size);
 
   // Compute the size for the new TLAB.
   // The "last" tlab may be smaller to reduce fragmentation.
   // unsafe_max_tlab_alloc is just a hint.
+  // 获取Eden空闲区的大小
   const size_t available_size = Universe::heap()->unsafe_max_tlab_alloc(myThread()) /
                                                   HeapWordSize;
   size_t new_tlab_size = MIN2(available_size, desired_size() + aligned_obj_size);
 
   // Make sure there's enough room for object and filler int[].
   const size_t obj_plus_filler_size = aligned_obj_size + alignment_reserve();
+  // 确保新的TLAB的内存大小要大于为对象分配的内存空间
   if (new_tlab_size < obj_plus_filler_size) {
     // If there isn't enough room for the allocation, return failure.
     if (PrintTLAB && Verbose) {

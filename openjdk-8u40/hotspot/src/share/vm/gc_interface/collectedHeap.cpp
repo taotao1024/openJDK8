@@ -265,6 +265,8 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(KlassHandle klass, Thread* thre
 
   // Retain tlab and allocate object in shared space if
   // the amount free in the tlab is too large to discard.
+  // 如果TLAB中的剩余空间太多，但是不足以为对象分配内存，
+  // 则只能从年轻代的Eden空间或老年代中分配
   if (thread->tlab().free() > thread->tlab().refill_waste_limit()) {
     thread->tlab().record_slow_allocation(size);
     return NULL;
@@ -272,8 +274,10 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(KlassHandle klass, Thread* thre
 
   // Discard tlab and allocate a new one.
   // To minimize fragmentation, the last TLAB may be smaller than the rest.
+  // 丢弃原TLAB，分配一个新的TLAB，首先计算新分配的TLAB的大小
+  // inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size)
   size_t new_tlab_size = thread->tlab().compute_size(size);
-
+  // void ThreadLocalAllocBuffer::clear_before_allocation()
   thread->tlab().clear_before_allocation();
 
   if (new_tlab_size == 0) {
@@ -281,6 +285,7 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(KlassHandle klass, Thread* thre
   }
 
   // Allocate a new TLAB...
+  // 分配一个新的TLAB
   HeapWord* obj = Universe::heap()->allocate_new_tlab(new_tlab_size);
   if (obj == NULL) {
     return NULL;
@@ -290,6 +295,7 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(KlassHandle klass, Thread* thre
 
   if (ZeroTLAB) {
     // ..and clear it.
+    // 将新分配的内存清零
     Copy::zero_to_words(obj, new_tlab_size);
   } else {
     // ...and zap just allocated object.

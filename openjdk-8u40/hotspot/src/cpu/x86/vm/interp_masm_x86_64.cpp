@@ -192,6 +192,8 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(
   Register reg,
   int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
+  // 调用load_unsigned_short()函数加载new指令后
+  // 的操作数并保存到%rdx中
   load_unsigned_short(reg, Address(r13, bcp_offset));
   bswapl(reg);
   shrl(reg, 16);

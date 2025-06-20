@@ -342,6 +342,7 @@ HeapWord* GenCollectedHeap::attempt_allocation(size_t size,
                                                bool is_tlab,
                                                bool first_only) {
   HeapWord* res;
+  // 在Serial和Serial Old回收器中，堆被分为年轻代和老年代，因此_n_gens的值为2
   for (int i = 0; i < _n_gens; i++) {
     if (_gens[i]->should_allocate(size, is_tlab)) {
       res = _gens[i]->allocate(size, is_tlab);
@@ -355,6 +356,9 @@ HeapWord* GenCollectedHeap::attempt_allocation(size_t size,
 
 HeapWord* GenCollectedHeap::mem_allocate(size_t size,
                                          bool* gc_overhead_limit_was_exceeded) {
+  // 在使用Serial和Serial Old收集器时，内存堆管理器GenCollectedHeap的默认
+  // GC策略实现是MarkSweepPolicy
+  // HeapWord* GenCollectorPolicy::mem_allocate_work(
   return collector_policy()->mem_allocate_work(size,
                                                false /* is_tlab */,
                                                gc_overhead_limit_was_exceeded);
@@ -1003,11 +1007,16 @@ size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   }
   return result;
 }
-
+// 为某一线程申请一块本地分配缓冲区TLAB
 HeapWord* GenCollectedHeap::allocate_new_tlab(size_t size) {
   bool gc_overhead_limit_was_exceeded;
-  return collector_policy()->mem_allocate_work(size /* size */,
-                                               true /* is_tlab */,
+  //   gc_overhead_limit_was_exceeded参数表示这次
+  // 内存分配是否发生了GC并且GC的时间超过了设置的时
+  // 间。这个设计主要是为了满足那些对延时敏感的场
+  // 景，也就是当gc_overhead_limit_was_exceeded为
+  // true时，给上层应用抛出OOM异常以便其进行恰当的处理
+  return collector_policy()->mem_allocate_work(size /* size 为TLAB分配内存 */,
+                                               true /* is_tlab true表示分配新的TLAB */,
                                                &gc_overhead_limit_was_exceeded);
 }
 

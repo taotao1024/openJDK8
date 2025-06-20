@@ -36,10 +36,12 @@ float AdaptiveWeightedAverage::compute_adaptive_average(float new_sample,
   unsigned count_weight = 0;
 
   // Avoid division by zero if the counter wraps (7158457)
+  // 当采样数不大于100时，is_old()函数将返回false
+  // 次数权重 = 100 / 次数
   if (!is_old()) {
     count_weight = OLD_THRESHOLD/count();
   }
-
+  // 计算权重 = 次数权重 与 TLABAllocationWeight 中的 最大值
   unsigned adaptive_weight = (MAX2(weight(), count_weight));
 
   float new_avg = exp_avg(average, new_sample, adaptive_weight);
@@ -51,6 +53,7 @@ void AdaptiveWeightedAverage::sample(float new_sample) {
   increment_count();
 
   // Compute the new weighted average
+  // 计算新的加权平均值，average()函数获取_average参数的值，默认为0
   float new_avg = compute_adaptive_average(new_sample, average());
   set_average(new_avg);
   _last_sample = new_sample;
